@@ -25,6 +25,12 @@ const NAV = [
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    useApp.persist.rehydrate();
+    setHydrated(true);
+  }, []);
+
 
   return (
     <div className="flex min-h-screen w-full bg-muted/30">
