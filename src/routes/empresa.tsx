@@ -1,30 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useApp } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { useEmpresa, useSaveEmpresa } from "@/lib/store";
+import type { Empresa } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/empresa")({
   head: () => ({ meta: [{ title: "Empresa — Freela OS" }] }),
   component: EmpresaPage,
 });
 
+const blank: Empresa = { id: "", nome: "", endereco: {} };
+
 function EmpresaPage() {
-  const { empresa, setEmpresa } = useApp();
-  const [e, setE] = useState(empresa);
+  const { data, isLoading } = useEmpresa();
+  const save = useSaveEmpresa();
+  const [e, setE] = useState<Empresa>(blank);
+
+  useEffect(() => {
+    if (data) setE(data);
+  }, [data]);
 
   const onLogo = (file?: File) => {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setE({ ...e, logo_url: String(reader.result) });
+    reader.onload = () => setE((cur) => ({ ...cur, logo_url: String(reader.result) }));
     reader.readAsDataURL(file);
   };
 
-  const save = () => { setEmpresa(e); toast.success("Dados salvos"); };
+  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
 
   return (
     <div className="space-y-4 max-w-4xl">
@@ -33,7 +40,9 @@ function EmpresaPage() {
           <h1 className="text-2xl font-semibold">Dados da empresa</h1>
           <p className="text-sm text-muted-foreground">Usados automaticamente na geração do PDF.</p>
         </div>
-        <Button onClick={save}>Salvar</Button>
+        <Button onClick={() => save.mutate(e)} disabled={save.isPending}>
+          {save.isPending ? "Salvando…" : "Salvar"}
+        </Button>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
@@ -82,7 +91,9 @@ function EmpresaPage() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end"><Button onClick={save}>Salvar alterações</Button></div>
+      <div className="flex justify-end">
+        <Button onClick={() => save.mutate(e)} disabled={save.isPending}>Salvar alterações</Button>
+      </div>
     </div>
   );
 }

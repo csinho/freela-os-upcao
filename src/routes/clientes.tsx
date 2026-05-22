@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useApp } from "@/lib/store";
+import { useClientes, useUpsertCliente, useRemoveCliente } from "@/lib/store";
 import type { Cliente } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,9 @@ const empty = (): Cliente => ({
 });
 
 function ClientesPage() {
-  const { clientes, upsertCliente, removeCliente } = useApp();
+  const { data: clientes = [], isLoading } = useClientes();
+  const upsert = useUpsertCliente();
+  const remove = useRemoveCliente();
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Cliente | null>(null);
 
@@ -34,13 +36,20 @@ function ClientesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Clientes</h1>
-          <p className="text-sm text-muted-foreground">{clientes.length} cadastrados</p>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Carregando…" : `${clientes.length} cadastrados`}
+          </p>
         </div>
         <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
           <DialogTrigger asChild>
             <Button onClick={() => setEditing(empty())}><Plus className="h-4 w-4 mr-1" /> Novo cliente</Button>
           </DialogTrigger>
-          {editing && <ClienteForm value={editing} onSave={(c) => { upsertCliente(c); setEditing(null); }} />}
+          {editing && (
+            <ClienteForm
+              value={editing}
+              onSave={(c) => upsert.mutate(c, { onSuccess: () => setEditing(null) })}
+            />
+          )}
         </Dialog>
       </div>
 
@@ -66,7 +75,7 @@ function ClientesPage() {
                 <TableCell>{c.endereco.cidade ? `${c.endereco.cidade}/${c.endereco.estado || ""}` : "—"}</TableCell>
                 <TableCell className="text-right">
                   <Button size="icon" variant="ghost" onClick={() => setEditing(c)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => confirm("Remover cliente?") && removeCliente(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => confirm("Remover cliente?") && remove.mutate(c.id)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             ))}

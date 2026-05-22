@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { useState } from "react";
-import { useApp } from "@/lib/store";
+import { useOrcamentos, useClientes, useFinanceiro, useMoveOrcamento } from "@/lib/store";
 import { calcTotal, formatBRL, formatDate, STATUS_LABEL, STATUS_ORDER, StatusOrcamento } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,10 @@ export const Route = createFileRoute("/kanban")({
 });
 
 function KanbanPage() {
-  const { orcamentos, clientes, financeiro, moveOrcamento } = useApp();
+  const { data: orcamentos = [] } = useOrcamentos();
+  const { data: clientes = [] } = useClientes();
+  const { data: financeiro = [] } = useFinanceiro();
+  const move = useMoveOrcamento();
   const navigate = useNavigate();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -22,7 +25,7 @@ function KanbanPage() {
     setActiveId(null);
     const over = e.over?.id as StatusOrcamento | undefined;
     if (over && STATUS_ORDER.includes(over)) {
-      moveOrcamento(String(e.active.id), over);
+      move.mutate({ id: String(e.active.id), status: over });
     }
   };
 
@@ -37,7 +40,8 @@ function KanbanPage() {
   };
 
   const renderCard = (id: string) => {
-    const o = orcamentos.find((x) => x.id === id)!;
+    const o = orcamentos.find((x) => x.id === id);
+    if (!o) return null;
     const cli = clientes.find((c) => c.id === o.cliente_id);
     const fs = statusFin(o.id);
     return (

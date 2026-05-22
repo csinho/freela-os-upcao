@@ -1,6 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, type ComponentType } from "react";
-import { useApp, novoItem } from "@/lib/store";
+import {
+  useOrcamento,
+  useClientes,
+  useServicos,
+  useEmpresa,
+  useUpsertOrcamento,
+  useRemoveOrcamento,
+  useMoveOrcamento,
+  novoItem,
+} from "@/lib/store";
 import type { Cliente, Empresa, Orcamento, OrcamentoItem, StatusOrcamento } from "@/lib/types";
 import { calcSubtotal, calcTotal, formatBRL, STATUS_LABEL, STATUS_ORDER } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -39,10 +48,23 @@ export const Route = createFileRoute("/orcamentos/$id")({
 function OrcamentoDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { orcamentos, clientes, servicos, empresa, upsertOrcamento, removeOrcamento, moveOrcamento } = useApp();
-  const original = orcamentos.find((o) => o.id === id);
-  const [o, setO] = useState<Orcamento | null>(original ?? null);
+  const { data: original, isLoading } = useOrcamento(id);
+  const { data: clientes = [] } = useClientes();
+  const { data: servicos = [] } = useServicos();
+  const { data: empresa } = useEmpresa();
+  const upsert = useUpsertOrcamento();
+  const remove = useRemoveOrcamento();
+  const move = useMoveOrcamento();
+  const [o, setO] = useState<Orcamento | null>(null);
   const [preview, setPreview] = useState(false);
+
+  useEffect(() => {
+    if (original) setO(original);
+  }, [original]);
+
+  if (isLoading || !empresa) {
+    return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  }
 
   if (!original || !o) {
     return (
@@ -75,8 +97,8 @@ function OrcamentoDetail() {
 
   const removeItem = (i: number) => setO({ ...o, itens: o.itens.filter((_, idx) => idx !== i) });
 
-  const save = () => { upsertOrcamento(o); };
-  const saveAndExit = () => { upsertOrcamento(o); navigate({ to: "/orcamentos" }); };
+  const save = () => upsert.mutate(o);
+  const saveAndExit = () => upsert.mutate(o, { onSuccess: () => navigate({ to: "/orcamentos" }) });
 
   return (
     <div className="space-y-5">
@@ -89,15 +111,32 @@ function OrcamentoDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Select value={o.status} onValueChange={(v) => { setO({ ...o, status: v as StatusOrcamento }); moveOrcamento(o.id, v as StatusOrcamento); }}>
+          <Select
+            value={o.status}
+            onValueChange={(v) => {
+              const status = v as StatusOrcamento;
+              setO({ ...o, status });
+              move.mutate({ id: o.id, status });
+            }}
+          >
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>{STATUS_ORDER.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
           </Select>
           <Button variant="outline" onClick={() => { save(); setPreview(true); }}><Eye className="h-4 w-4 mr-1" /> Visualizar PDF</Button>
           <ClientOnlyPDF kind="download" orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)} />
 
-          <Button onClick={saveAndExit}>Salvar</Button>
-          <Button variant="ghost" size="icon" onClick={() => confirm("Excluir orçamento?") && (removeOrcamento(o.id), navigate({ to: "/orcamentos" }))}><Trash2 className="h-4 w-4" /></Button>
+          <Button onClick={saveAndExit} disabled={upsert.isPending}>
+            {upsert.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (confirm("Excluir orçamento?")) {
+                remove.mutate(o.id, { onSuccess: () => navigate({ to: "/orcamentos" }) });
+              }
+            }}
+          ><Trash2 className="h-4 w-4" /></Button>
         </div>
       </div>
 
@@ -213,7 +252,6 @@ function OrcamentoDetail() {
             {preview && (
               <ClientOnlyPDF kind="preview" orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)} />
             )}
-
           </div>
         </DialogContent>
       </Dialog>
