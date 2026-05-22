@@ -73,8 +73,9 @@ export function AppShell() {
           </nav>
         </header>
         <main className="flex-1 p-4 md:p-8 min-w-0">
-          <Outlet />
+          {hydrated ? <Outlet /> : <div className="text-sm text-muted-foreground">Carregando…</div>}
         </main>
+
       </div>
     </div>
   );
