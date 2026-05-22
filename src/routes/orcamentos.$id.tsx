@@ -94,9 +94,8 @@ function OrcamentoDetail() {
             <SelectContent>{STATUS_ORDER.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
           </Select>
           <Button variant="outline" onClick={() => { save(); setPreview(true); }}><Eye className="h-4 w-4 mr-1" /> Visualizar PDF</Button>
-          <Suspense fallback={<Button variant="outline" disabled><Download className="h-4 w-4 mr-1" />PDF</Button>}>
-            <DownloadButton orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)!} />
-          </Suspense>
+          <ClientOnlyPDF kind="download" orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)} />
+
           <Button onClick={saveAndExit}>Salvar</Button>
           <Button variant="ghost" size="icon" onClick={() => confirm("Excluir orçamento?") && (removeOrcamento(o.id), navigate({ to: "/orcamentos" }))}><Trash2 className="h-4 w-4" /></Button>
         </div>
