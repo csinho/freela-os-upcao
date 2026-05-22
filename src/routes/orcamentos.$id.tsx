@@ -211,10 +211,9 @@ function OrcamentoDetail() {
           <DialogHeader className="p-4 border-b"><DialogTitle>Pré-visualização do PDF</DialogTitle></DialogHeader>
           <div className="flex-1 min-h-0">
             {preview && (
-              <Suspense fallback={<div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>}>
-                <PDFViewerLazy orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)!} />
-              </Suspense>
+              <ClientOnlyPDF kind="preview" orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)} />
             )}
+
           </div>
         </DialogContent>
       </Dialog>
