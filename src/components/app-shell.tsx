@@ -1,5 +1,4 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   KanbanSquare,
@@ -10,8 +9,6 @@ import {
   Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useApp } from "@/lib/store";
-
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -25,12 +22,6 @@ const NAV = [
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    useApp.persist.rehydrate();
-    setHydrated(true);
-  }, []);
-
 
   return (
     <div className="flex min-h-screen w-full bg-muted/30">
@@ -59,7 +50,7 @@ export function AppShell() {
           })}
         </nav>
         <div className="p-4 text-xs text-muted-foreground border-t">
-          Dados mockados · localStorage
+          Conectado ao Supabase
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
@@ -73,9 +64,8 @@ export function AppShell() {
           </nav>
         </header>
         <main className="flex-1 p-4 md:p-8 min-w-0">
-          {hydrated ? <Outlet /> : <div className="text-sm text-muted-foreground">Carregando…</div>}
+          <Outlet />
         </main>
-
       </div>
     </div>
   );

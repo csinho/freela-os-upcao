@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useApp } from "@/lib/store";
+import { useOrcamentos, useFinanceiro } from "@/lib/store";
 import { calcTotal, formatBRL, formatDate, STATUS_LABEL } from "@/lib/types";
+import type { StatusOrcamento } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -10,7 +11,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-  const { orcamentos, financeiro } = useApp();
+  const { data: orcamentos = [], isLoading: lo } = useOrcamentos();
+  const { data: financeiro = [], isLoading: lf } = useFinanceiro();
 
   const totaisPorStatus = orcamentos.reduce<Record<string, { count: number; total: number }>>((acc, o) => {
     const t = calcTotal(o);
@@ -47,7 +49,9 @@ function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral dos projetos e finanças.</p>
+        <p className="text-sm text-muted-foreground">
+          {lo || lf ? "Carregando…" : "Visão geral dos projetos e finanças."}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -79,7 +83,7 @@ function Dashboard() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">{formatBRL(calcTotal(o))}</div>
-                  <Badge variant="secondary" className="text-[10px]">{STATUS_LABEL[o.status]}</Badge>
+                  <Badge variant="secondary" className="text-[10px]">{STATUS_LABEL[o.status as StatusOrcamento]}</Badge>
                 </div>
               </Link>
             ))}

@@ -1,39 +1,32 @@
-# Migrando para Supabase (Lovable Cloud)
+# Integração com Supabase
 
-Hoje o sistema usa **Zustand + localStorage** como repositório (`src/lib/store.ts`). A camada está pronta para troca: a UI **não conhece** os detalhes do storage, ela apenas chama `useApp()`.
+O sistema está conectado ao seu projeto **Supabase externo** usando a *publishable key* (chave pública, segura no client).
 
-## Passo a passo
+## Setup (uma vez)
 
-1. **Ative Lovable Cloud** no projeto (botão da barra lateral do Lovable).
-2. Aplique o SQL de `docs/banco-de-dados.md` (Cloud → Database → SQL).
-3. Crie um arquivo `src/lib/repository/supabase.ts` que exponha as mesmas funções do store atual usando o client `@/integrations/supabase/client`:
+1. Acesse o **SQL Editor** do seu projeto: https://supabase.com/dashboard/project/tdtmxddukuqsxsiiwzqp/sql
+2. Cole o conteúdo de `docs/setup-supabase.sql` em uma **New query**.
+3. Clique em **Run**.
 
-```ts
-import { supabase } from "@/integrations/supabase/client";
+Isso cria todas as tabelas (`empresas`, `clientes`, `servicos`, `orcamentos`, `orcamento_itens`, `financeiro`, `historico_status`), índices, ativa RLS com policies liberadas para o role `anon` (adequado para uso pessoal) e insere os dados de exemplo.
 
-export const clientesRepo = {
-  list: async () => (await supabase.from("clientes").select("*")).data ?? [],
-  upsert: async (c) => supabase.from("clientes").upsert(c),
-  remove: async (id) => supabase.from("clientes").delete().eq("id", id),
-};
-// repita para servicos, orcamentos (com itens via join), financeiro, empresa.
-```
+## Cliente
 
-4. Reescreva `store.ts` para chamar os repos (ou use TanStack Query com `useQuery`/`useMutation`). Mantenha a mesma API pública (`useApp().clientes`, `upsertCliente`, etc.) para não tocar nos componentes.
-5. Para o módulo **Empresa**, suba a logo para Storage e salve `logo_url` (ou continue com data URL).
-6. Importe seus dados atuais do `localStorage` (DevTools → Application → Local Storage → `freela-os-v1`) e cole no SQL Editor como `insert`.
+`src/integrations/supabase/client.ts` — instancia o client com URL + publishable key.
 
-## Por que essa estrutura?
+## Camada de dados
 
-- Componentes consomem `useApp()` — não importa se vem do localStorage ou da rede.
-- Os tipos em `src/lib/types.ts` são compartilhados.
-- O cálculo (`calcTotal`, `calcSubtotal`) é puro e independente do storage.
+- `src/lib/repository.ts` — funções tipadas para cada tabela (list/upsert/remove + `move` para orçamentos)
+- `src/lib/store.ts` — hooks `useEmpresa`, `useClientes`, `useServicos`, `useOrcamentos`, `useOrcamento(id)`, `useFinanceiro` e mutações correspondentes, baseadas em **TanStack Query**
 
-## Trocando dados mockados por reais
+## Regras automáticas
 
-- **Sem Supabase ainda:** abra **Clientes / Serviços / Empresa** e edite/remova/cadastre. Para limpar tudo, no console do navegador:
-  ```js
-  localStorage.removeItem("freela-os-v1"); location.reload();
-  ```
-  (Recarrega com os dados de seed novamente.)
-- **Com Supabase:** apague os seeds e use os formulários normalmente — tudo persiste no banco.
+- Ao mover um orçamento para **Em produção**, o repositório registra `data_aprovacao`, grava em `historico_status` e cria uma conta a receber em `financeiro` (se ainda não existir).
+- Ao mover para **Entregue**, registra `data_entrega`.
+
+## Adicionar login depois
+
+Se quiser proteger com email/senha:
+1. Ative Auth no Supabase (já vem habilitado).
+2. Troque as policies de `using (true)` por `using (auth.uid() is not null)` (e adicione coluna `user_id` se for multi-tenant).
+3. Implemente tela de login com `supabase.auth.signInWithPassword`.

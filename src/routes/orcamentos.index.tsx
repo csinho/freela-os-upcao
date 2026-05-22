@@ -1,5 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useApp, gerarNumeroOrcamento } from "@/lib/store";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  useOrcamentos,
+  useClientes,
+  useEmpresa,
+  useUpsertOrcamento,
+  gerarNumeroOrcamento,
+} from "@/lib/store";
 import type { Orcamento } from "@/lib/types";
 import { calcTotal, formatBRL, formatDate, STATUS_LABEL } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -13,7 +19,10 @@ export const Route = createFileRoute("/orcamentos/")({
 });
 
 function OrcamentosList() {
-  const { orcamentos, clientes, empresa, upsertOrcamento } = useApp();
+  const { data: orcamentos = [], isLoading } = useOrcamentos();
+  const { data: clientes = [] } = useClientes();
+  const { data: empresa } = useEmpresa();
+  const upsert = useUpsertOrcamento();
   const navigate = useNavigate();
 
   const novo = () => {
@@ -26,13 +35,14 @@ function OrcamentosList() {
       itens: [],
       desconto: 0,
       acrescimo: 0,
-      condicoes: empresa.condicoes_padrao,
-      observacoes: empresa.observacoes_padrao,
+      condicoes: empresa?.condicoes_padrao,
+      observacoes: empresa?.observacoes_padrao,
       data_criacao: new Date().toISOString(),
       historico: [],
     };
-    upsertOrcamento(o);
-    navigate({ to: "/orcamentos/$id", params: { id: o.id } });
+    upsert.mutate(o, {
+      onSuccess: () => navigate({ to: "/orcamentos/$id", params: { id: o.id } }),
+    });
   };
 
   return (
@@ -40,9 +50,11 @@ function OrcamentosList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Orçamentos</h1>
-          <p className="text-sm text-muted-foreground">{orcamentos.length} registros</p>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Carregando…" : `${orcamentos.length} registros`}
+          </p>
         </div>
-        <Button onClick={novo}><Plus className="h-4 w-4 mr-1" /> Novo orçamento</Button>
+        <Button onClick={novo} disabled={upsert.isPending}><Plus className="h-4 w-4 mr-1" /> Novo orçamento</Button>
       </div>
 
       <div className="rounded-md border bg-card">

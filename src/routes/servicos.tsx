@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useApp } from "@/lib/store";
+import { useServicos, useUpsertServico, useRemoveServico } from "@/lib/store";
 import type { Servico, UnidadeServico } from "@/lib/types";
 import { formatBRL } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,9 @@ const empty = (): Servico => ({ id: crypto.randomUUID(), nome: "", valor_padrao:
 const UNIDADES: UnidadeServico[] = ["serviço", "hora", "mensalidade", "pacote"];
 
 function ServicosPage() {
-  const { servicos, upsertServico, removeServico } = useApp();
+  const { data: servicos = [], isLoading } = useServicos();
+  const upsert = useUpsertServico();
+  const remove = useRemoveServico();
   const [editing, setEditing] = useState<Servico | null>(null);
 
   return (
@@ -32,13 +34,20 @@ function ServicosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Serviços</h1>
-          <p className="text-sm text-muted-foreground">{servicos.length} cadastrados</p>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Carregando…" : `${servicos.length} cadastrados`}
+          </p>
         </div>
         <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
           <DialogTrigger asChild>
             <Button onClick={() => setEditing(empty())}><Plus className="h-4 w-4 mr-1" /> Novo serviço</Button>
           </DialogTrigger>
-          {editing && <ServicoForm value={editing} onSave={(s) => { upsertServico(s); setEditing(null); }} />}
+          {editing && (
+            <ServicoForm
+              value={editing}
+              onSave={(s) => upsert.mutate(s, { onSuccess: () => setEditing(null) })}
+            />
+          )}
         </Dialog>
       </div>
 
@@ -65,7 +74,7 @@ function ServicosPage() {
                 <TableCell><Badge variant={s.ativo ? "default" : "secondary"}>{s.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
                 <TableCell className="text-right">
                   <Button size="icon" variant="ghost" onClick={() => setEditing(s)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => confirm("Remover?") && removeServico(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => confirm("Remover?") && remove.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             ))}

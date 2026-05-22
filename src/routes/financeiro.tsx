@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useApp } from "@/lib/store";
+import {
+  useFinanceiro,
+  useClientes,
+  useOrcamentos,
+  useUpsertFinanceiro,
+  useRemoveFinanceiro,
+} from "@/lib/store";
 import type { Financeiro, StatusFinanceiro, TipoFinanceiro } from "@/lib/types";
 import { formatBRL, formatDate } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -35,7 +41,10 @@ const statusVariant: Record<StatusFinanceiro, "default" | "secondary" | "destruc
 };
 
 function FinanceiroPage() {
-  const { financeiro, clientes, orcamentos, upsertFinanceiro, removeFinanceiro } = useApp();
+  const { data: financeiro = [], isLoading } = useFinanceiro();
+  const { data: clientes = [] } = useClientes();
+  const upsert = useUpsertFinanceiro();
+  const remove = useRemoveFinanceiro();
   const [editing, setEditing] = useState<Financeiro | null>(null);
   const [filter, setFilter] = useState<"todos" | TipoFinanceiro>("todos");
 
@@ -51,10 +60,12 @@ function FinanceiroPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">A receber: {formatBRL(totals.receber)} · A pagar: {formatBRL(totals.pagar)}</p>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "Carregando…" : `A receber: ${formatBRL(totals.receber)} · A pagar: ${formatBRL(totals.pagar)}`}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+          <Select value={filter} onValueChange={(v) => setFilter(v as "todos" | TipoFinanceiro)}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
@@ -64,7 +75,12 @@ function FinanceiroPage() {
           </Select>
           <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
             <DialogTrigger asChild><Button onClick={() => setEditing(empty())}><Plus className="h-4 w-4 mr-1" /> Lançamento</Button></DialogTrigger>
-            {editing && <FinForm value={editing} onSave={(f) => { upsertFinanceiro(f); setEditing(null); }} />}
+            {editing && (
+              <FinForm
+                value={editing}
+                onSave={(f) => upsert.mutate(f, { onSuccess: () => setEditing(null) })}
+              />
+            )}
           </Dialog>
         </div>
       </div>
@@ -95,7 +111,7 @@ function FinanceiroPage() {
                   <TableCell className="text-right font-medium">{formatBRL(f.valor)}</TableCell>
                   <TableCell className="text-right">
                     <Button size="icon" variant="ghost" onClick={() => setEditing(f)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => confirm("Remover?") && removeFinanceiro(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => confirm("Remover?") && remove.mutate(f.id)}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
               );
@@ -109,7 +125,8 @@ function FinanceiroPage() {
 }
 
 function FinForm({ value, onSave }: { value: Financeiro; onSave: (f: Financeiro) => void }) {
-  const { clientes, orcamentos } = useApp();
+  const { data: clientes = [] } = useClientes();
+  const { data: orcamentos = [] } = useOrcamentos();
   const [f, setF] = useState(value);
   return (
     <DialogContent className="max-w-xl">
