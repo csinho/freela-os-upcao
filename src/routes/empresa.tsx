@@ -158,12 +158,12 @@ function EmpresaPage() {
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Dados da empresa</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold sm:text-2xl">Dados da empresa</h1>
           <p className="text-sm text-muted-foreground">Usados automaticamente na geração do PDF.</p>
         </div>
-        <Button onClick={onSalvar} disabled={save.isPending}>
+        <Button onClick={onSalvar} disabled={save.isPending} className="shrink-0 w-full sm:w-auto">
           {save.isPending ? "Salvando…" : "Salvar"}
         </Button>
       </div>
@@ -337,8 +337,8 @@ function EmpresaPage() {
         <CardHeader>
           <CardTitle className="text-base">Endereço</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-6 gap-3">
-          <div className="col-span-2">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="sm:col-span-1 lg:col-span-2">
             <Label>CEP</Label>
             <Input
               value={e.endereco.cep || ""}
@@ -352,7 +352,7 @@ function EmpresaPage() {
             <FieldError msg={cepErroFmt || cepErro} />
           </div>
 
-          <div className="col-span-4">
+          <div className="sm:col-span-1 lg:col-span-4">
             <Label>Rua</Label>
             <Input
               value={e.endereco.rua || ""}
@@ -360,7 +360,7 @@ function EmpresaPage() {
             />
           </div>
 
-          <div className="col-span-1">
+          <div>
             <Label>Número</Label>
             <Input
               value={e.endereco.numero || ""}
@@ -370,7 +370,7 @@ function EmpresaPage() {
             />
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-1 lg:col-span-2">
             <Label>Complemento</Label>
             <Input
               value={e.endereco.complemento || ""}
@@ -380,7 +380,7 @@ function EmpresaPage() {
             />
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-1 lg:col-span-2">
             <Label>Bairro</Label>
             <Input
               value={e.endereco.bairro || ""}
@@ -390,7 +390,7 @@ function EmpresaPage() {
             />
           </div>
 
-          <div className="col-span-3">
+          <div className="sm:col-span-1 lg:col-span-3">
             <Label>Cidade</Label>
             <Input
               value={e.endereco.cidade || ""}
@@ -400,7 +400,7 @@ function EmpresaPage() {
             />
           </div>
 
-          <div className="col-span-1">
+          <div>
             <Label>UF</Label>
             <Input
               value={e.endereco.estado || ""}

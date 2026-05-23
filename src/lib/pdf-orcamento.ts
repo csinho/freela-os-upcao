@@ -37,6 +37,32 @@ function enderecoLinha(e?: {
   return [p1, p2, e.cep && `CEP ${e.cep}`].filter(Boolean).join(" — ");
 }
 
+/** Linha de assinatura + rótulo centralizado na mesma coluna. */
+function signatureField(label: string): PdfContent {
+  return {
+    width: "*",
+    stack: [
+      {
+        table: {
+          widths: ["*"],
+          body: [[{ text: " ", margin: [0, 20, 0, 0] }]],
+        },
+        layout: {
+          hLineWidth: (i: number, node: { table: { body: unknown[] } }) =>
+            i === node.table.body.length ? 0.5 : 0,
+          vLineWidth: () => 0,
+          hLineColor: () => "#111111",
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+        },
+      },
+      { text: label, style: "small", alignment: "center", margin: [0, 4, 0, 0] },
+    ],
+  };
+}
+
 function card(title: string, body: PdfContent[]): PdfContent {
   return {
     margin: [0, 0, 0, 8],
@@ -125,7 +151,7 @@ export function buildOrcamentoPdfDoc(
 
   return {
     pageSize: "A4",
-    pageMargins: [28, 28, 28, 72],
+    pageMargins: [28, 28, 28, 92],
     defaultStyle: { fontSize: 9, color: "#111111" },
     styles: {
       companyName: { fontSize: 13, bold: true },
@@ -138,30 +164,24 @@ export function buildOrcamentoPdfDoc(
       totalFinal: { fontSize: 10, bold: true },
     },
     footer: () => ({
-      margin: [28, 8, 28, 20],
+      margin: [28, 0, 28, 16],
       stack: [
         {
           columns: [
-            { width: "*", canvas: [{ type: "line", x1: 0, y1: 0, x2: 220, y2: 0, lineWidth: 1 }] },
-            { width: "*", canvas: [{ type: "line", x1: 0, y1: 0, x2: 220, y2: 0, lineWidth: 1 }] },
+            signatureField("Data do aceite"),
+            signatureField(
+              `Assinatura do cliente${cliente?.nome ? ` — ${cliente.nome}` : ""}`,
+            ),
           ],
           columnGap: 24,
-          margin: [0, 0, 0, 4],
         },
         {
-          columns: [
-            { text: "Data do aceite", style: "small", alignment: "center", width: "*" },
-            {
-              text: `Assinatura do cliente${cliente?.nome ? ` — ${cliente.nome}` : ""}`,
-              style: "small",
-              alignment: "center",
-              width: "*",
-            },
-          ],
-          columnGap: 24,
-          margin: [0, 0, 0, 8],
+          text: footerText,
+          alignment: "center",
+          fontSize: 8,
+          color: "#666666",
+          margin: [0, 16, 0, 0],
         },
-        { text: footerText, alignment: "center", fontSize: 8, color: "#666666" },
       ],
     }),
     content: [

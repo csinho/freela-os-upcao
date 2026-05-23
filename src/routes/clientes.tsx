@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useClientes, useUpsertCliente, useRemoveCliente } from "@/lib/store";
 import type { Cliente } from "@/lib/types";
-import { newId } from "@/lib/id";
+import { ensureUuid, newId } from "@/lib/id";
 import { buscarCep } from "@/lib/viacep";
 import {
   maskCep,
@@ -14,11 +14,20 @@ import {
 import { CrudDialog } from "@/components/crud-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { ListCard } from "@/components/list-card";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({ meta: [{ title: "Clientes — Freela OS" }] }),
@@ -48,21 +57,60 @@ function ClientesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Clientes</h1>
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `${clientes.length} cadastrados`}
-          </p>
-        </div>
-        <Button type="button" onClick={() => setEditing(empty())}>
+      <PageHeader
+        title="Clientes"
+        description={isLoading ? "Carregando…" : `${clientes.length} cadastrados`}
+      >
+        <Button type="button" className="w-full sm:w-auto" onClick={() => setEditing(empty())}>
           <Plus className="h-4 w-4 mr-1" /> Novo cliente
         </Button>
+      </PageHeader>
+
+      <Input
+        placeholder="Buscar..."
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="w-full sm:max-w-sm"
+      />
+
+      <div className="md:hidden space-y-3">
+        {filtered.map((c) => (
+          <ListCard key={c.id}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium">{c.nome}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {c.telefone || c.email || "—"}
+                </div>
+                {c.documento && <div className="text-xs text-muted-foreground">{c.documento}</div>}
+                {c.endereco.cidade && (
+                  <div className="text-xs text-muted-foreground">
+                    {c.endereco.cidade}/{c.endereco.estado || ""}
+                  </div>
+                )}
+              </div>
+              <div className="flex shrink-0 gap-0.5">
+                <Button type="button" size="icon" variant="ghost" onClick={() => setEditing(c)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => confirm("Remover cliente?") && remove.mutate(c.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </ListCard>
+        ))}
+        {filtered.length === 0 && (
+          <p className="text-center text-sm text-muted-foreground py-8">Nenhum cliente.</p>
+        )}
       </div>
 
-      <Input placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
-
-      <div className="rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -79,7 +127,9 @@ function ClientesPage() {
                 <TableCell className="font-medium">{c.nome}</TableCell>
                 <TableCell>{c.telefone || c.email || "—"}</TableCell>
                 <TableCell>{c.documento || "—"}</TableCell>
-                <TableCell>{c.endereco.cidade ? `${c.endereco.cidade}/${c.endereco.estado || ""}` : "—"}</TableCell>
+                <TableCell>
+                  {c.endereco.cidade ? `${c.endereco.cidade}/${c.endereco.estado || ""}` : "—"}
+                </TableCell>
                 <TableCell className="text-right">
                   <Button type="button" size="icon" variant="ghost" onClick={() => setEditing(c)}>
                     <Pencil className="h-4 w-4" />
@@ -109,7 +159,7 @@ function ClientesPage() {
       <CrudDialog
         open={!!editing}
         onOpenChange={(open) => !open && setEditing(null)}
-        className="max-w-2xl"
+        className="max-w-3xl"
       >
         {editing && (
           <ClienteForm
@@ -165,105 +215,136 @@ function ClienteForm({ value, onSave }: { value: Cliente; onSave: (c: Cliente) =
     }
   };
 
-  const podeSalvar =
-    !!c.nome.trim() && !telErro && !emailErro && !cepErroFmt && !cepErro;
+  const podeSalvar = !!c.nome.trim() && !telErro && !emailErro && !cepErroFmt && !cepErro;
 
   return (
     <>
       <DialogHeader>
         <DialogTitle>{value.nome ? "Editar cliente" : "Novo cliente"}</DialogTitle>
       </DialogHeader>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
-          <Label>Nome*</Label>
-          <Input value={c.nome} onChange={(e) => setC({ ...c, nome: e.target.value })} />
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <p className="text-sm font-medium">Dados do cliente</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 space-y-1.5">
+              <Label>Nome*</Label>
+              <Input value={c.nome} onChange={(e) => setC({ ...c, nome: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Telefone</Label>
+              <Input
+                value={c.telefone || ""}
+                onChange={(e) => setC({ ...c, telefone: maskTelefone(e.target.value) })}
+                placeholder="(71) 9 9675-5745"
+                aria-invalid={!!telErro}
+                className={telErro ? "border-destructive" : ""}
+              />
+              <FieldError msg={telErro} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                value={c.email || ""}
+                onChange={(e) => setC({ ...c, email: e.target.value })}
+                placeholder="contato@email.com"
+                aria-invalid={!!emailErro}
+                className={emailErro ? "border-destructive" : ""}
+              />
+              <FieldError msg={emailErro} />
+            </div>
+            <div className="md:col-span-2 space-y-1.5">
+              <Label>CPF/CNPJ</Label>
+              <Input
+                value={c.documento || ""}
+                onChange={(e) => setC({ ...c, documento: e.target.value })}
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <Label>Telefone</Label>
-          <Input
-            value={c.telefone || ""}
-            onChange={(e) => setC({ ...c, telefone: maskTelefone(e.target.value) })}
-            placeholder="(71) 9 9675-5745"
-            aria-invalid={!!telErro}
-            className={telErro ? "border-destructive" : ""}
-          />
-          <FieldError msg={telErro} />
+
+        <div className="space-y-4 border-t pt-5">
+          <p className="text-sm font-medium">Endereço</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>CEP</Label>
+              <Input
+                value={c.endereco.cep || ""}
+                onChange={(e) => onCepChange(e.target.value)}
+                placeholder="00000-000"
+                inputMode="numeric"
+                disabled={cepLoading}
+                aria-invalid={!!(cepErro || cepErroFmt)}
+                className={cepErro || cepErroFmt ? "border-destructive" : ""}
+              />
+              {cepLoading && (
+                <p className="text-xs text-muted-foreground mt-1">Buscando endereço…</p>
+              )}
+              <FieldError msg={cepErroFmt || cepErro} />
+            </div>
+            <div className="hidden md:block" />
+            <div className="md:col-span-2 space-y-1.5">
+              <Label>Rua</Label>
+              <Input
+                value={c.endereco.rua || ""}
+                onChange={(e) => setC({ ...c, endereco: { ...c.endereco, rua: e.target.value } })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Número</Label>
+              <Input
+                value={c.endereco.numero || ""}
+                onChange={(e) =>
+                  setC({ ...c, endereco: { ...c.endereco, numero: e.target.value } })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Bairro</Label>
+              <Input
+                value={c.endereco.bairro || ""}
+                onChange={(e) =>
+                  setC({ ...c, endereco: { ...c.endereco, bairro: e.target.value } })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Cidade</Label>
+              <Input
+                value={c.endereco.cidade || ""}
+                onChange={(e) =>
+                  setC({ ...c, endereco: { ...c.endereco, cidade: e.target.value } })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>UF</Label>
+              <Input
+                value={c.endereco.estado || ""}
+                maxLength={2}
+                onChange={(e) =>
+                  setC({ ...c, endereco: { ...c.endereco, estado: e.target.value.toUpperCase() } })
+                }
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <Label>E-mail</Label>
-          <Input
-            type="email"
-            value={c.email || ""}
-            onChange={(e) => setC({ ...c, email: e.target.value })}
-            placeholder="contato@email.com"
-            aria-invalid={!!emailErro}
-            className={emailErro ? "border-destructive" : ""}
-          />
-          <FieldError msg={emailErro} />
-        </div>
-        <div>
-          <Label>CPF/CNPJ</Label>
-          <Input value={c.documento || ""} onChange={(e) => setC({ ...c, documento: e.target.value })} />
-        </div>
-        <div>
-          <Label>CEP</Label>
-          <Input
-            value={c.endereco.cep || ""}
-            onChange={(e) => onCepChange(e.target.value)}
-            placeholder="00000-000"
-            inputMode="numeric"
-            disabled={cepLoading}
-            aria-invalid={!!(cepErro || cepErroFmt)}
-            className={cepErro || cepErroFmt ? "border-destructive" : ""}
-          />
-          {cepLoading && <p className="text-xs text-muted-foreground mt-1">Buscando endereço…</p>}
-          <FieldError msg={cepErroFmt || cepErro} />
-        </div>
-        <div className="col-span-2">
-          <Label>Rua</Label>
-          <Input
-            value={c.endereco.rua || ""}
-            onChange={(e) => setC({ ...c, endereco: { ...c.endereco, rua: e.target.value } })}
-          />
-        </div>
-        <div>
-          <Label>Número</Label>
-          <Input
-            value={c.endereco.numero || ""}
-            onChange={(e) => setC({ ...c, endereco: { ...c.endereco, numero: e.target.value } })}
-          />
-        </div>
-        <div>
-          <Label>Bairro</Label>
-          <Input
-            value={c.endereco.bairro || ""}
-            onChange={(e) => setC({ ...c, endereco: { ...c.endereco, bairro: e.target.value } })}
-          />
-        </div>
-        <div>
-          <Label>Cidade</Label>
-          <Input
-            value={c.endereco.cidade || ""}
-            onChange={(e) => setC({ ...c, endereco: { ...c.endereco, cidade: e.target.value } })}
-          />
-        </div>
-        <div>
-          <Label>UF</Label>
-          <Input
-            value={c.endereco.estado || ""}
-            maxLength={2}
-            onChange={(e) =>
-              setC({ ...c, endereco: { ...c.endereco, estado: e.target.value.toUpperCase() } })
-            }
-          />
-        </div>
-        <div className="col-span-2">
+
+        <div className="space-y-1.5 border-t pt-5">
           <Label>Observações</Label>
-          <Textarea value={c.observacoes || ""} onChange={(e) => setC({ ...c, observacoes: e.target.value })} />
+          <Textarea
+            rows={3}
+            value={c.observacoes || ""}
+            onChange={(e) => setC({ ...c, observacoes: e.target.value })}
+          />
         </div>
       </div>
       <DialogFooter>
-        <Button type="button" disabled={!podeSalvar} onClick={() => podeSalvar && onSave(c)}>
+        <Button
+          type="button"
+          disabled={!podeSalvar}
+          onClick={() => podeSalvar && onSave({ ...c, id: ensureUuid(c.id) })}
+        >
           Salvar
         </Button>
       </DialogFooter>

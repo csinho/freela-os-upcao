@@ -13,7 +13,9 @@ type CrudDialogProps = {
 export function CrudDialog({ open, onOpenChange, className, children }: CrudDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(className)}>{open ? children : null}</DialogContent>
+      <DialogContent className={cn("max-h-[min(90dvh,100vh-2rem)] overflow-y-auto", className)}>
+        {open ? children : null}
+      </DialogContent>
     </Dialog>
   );
 }

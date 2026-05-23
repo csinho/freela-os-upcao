@@ -3,9 +3,24 @@ import { useState } from "react";
 import { useFinanceiro, useClientes, useOrcamentos } from "@/lib/store";
 import type { TipoFinanceiro } from "@/lib/types";
 import { formatBRL, formatCalendarDate } from "@/lib/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { ListCard } from "@/components/list-card";
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({ meta: [{ title: "Financeiro — Freela OS" }] }),
@@ -40,21 +55,24 @@ function FinanceiroPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">
-            Lançamentos gerados automaticamente quando o orçamento vira pedido (em produção). Marcados
-            como pagos ao entregar.
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isLoading
-              ? "Carregando…"
-              : `A receber: ${formatBRL(totals.receber)} · Recebido: ${formatBRL(totals.recebido)}`}
-          </p>
-        </div>
+      <PageHeader
+        title="Financeiro"
+        description={
+          <>
+            <p>
+              Lançamentos gerados automaticamente quando o orçamento vira pedido (em produção).
+              Marcados como pagos ao entregar.
+            </p>
+            <p className="mt-1">
+              {isLoading
+                ? "Carregando…"
+                : `A receber: ${formatBRL(totals.receber)} · Recebido: ${formatBRL(totals.recebido)}`}
+            </p>
+          </>
+        }
+      >
         <Select value={filter} onValueChange={(v) => setFilter(v as "todos" | TipoFinanceiro)}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -62,18 +80,54 @@ function FinanceiroPage() {
             <SelectItem value="receber">A receber</SelectItem>
           </SelectContent>
         </Select>
+      </PageHeader>
+
+      <div className="md:hidden space-y-3">
+        {list.map((f) => {
+          const cli = clientes.find((c) => c.id === f.cliente_id);
+          const ped = orcamentos.find((o) => o.id === f.orcamento_id);
+          return (
+            <ListCard key={f.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-sm">{f.descricao}</div>
+                  {ped && (
+                    <Link
+                      to="/orcamentos/$id"
+                      params={{ id: ped.id }}
+                      className="text-xs font-mono text-primary hover:underline inline-block mt-0.5"
+                    >
+                      {ped.numero}
+                    </Link>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">{cli?.nome ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Venc.: {formatCalendarDate(f.vencimento)}
+                  </div>
+                  <Badge variant={statusVariant[f.status]} className="mt-2 text-[10px]">
+                    {f.status}
+                  </Badge>
+                </div>
+                <div className="text-sm font-semibold shrink-0">{formatBRL(f.valor)}</div>
+              </div>
+            </ListCard>
+          );
+        })}
+        {list.length === 0 && (
+          <p className="text-center text-sm text-muted-foreground py-8">
+            Nenhum lançamento. Mova um orçamento para &quot;Em produção&quot; para gerar a entrada.
+          </p>
+        )}
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Pedido</TableHead>
+              <TableHead>Pedido / Cliente</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="w-36">Prazo</TableHead>
+              <TableHead className="text-right w-28">Valor</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -82,33 +136,40 @@ function FinanceiroPage() {
               const ped = orcamentos.find((o) => o.id === f.orcamento_id);
               return (
                 <TableRow key={f.id}>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell>
                     {ped ? (
                       <Link
                         to="/orcamentos/$id"
                         params={{ id: ped.id }}
-                        className="text-primary hover:underline"
+                        className="text-xs font-mono text-primary hover:underline"
                       >
                         {ped.numero}
                       </Link>
                     ) : (
-                      "—"
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
+                    <div className="text-sm mt-0.5">{cli?.nome ?? "—"}</div>
                   </TableCell>
-                  <TableCell>{f.descricao}</TableCell>
-                  <TableCell>{cli?.nome ?? "—"}</TableCell>
-                  <TableCell>{formatCalendarDate(f.vencimento)}</TableCell>
+                  <TableCell className="max-w-[14rem]">
+                    <span className="line-clamp-2">{f.descricao}</span>
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant[f.status]}>{f.status}</Badge>
+                    <div className="text-sm">{formatCalendarDate(f.vencimento)}</div>
+                    <Badge variant={statusVariant[f.status]} className="mt-1 text-[10px]">
+                      {f.status}
+                    </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-medium">{formatBRL(f.valor)}</TableCell>
+                  <TableCell className="text-right font-medium whitespace-nowrap">
+                    {formatBRL(f.valor)}
+                  </TableCell>
                 </TableRow>
               );
             })}
             {list.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                  Nenhum lançamento. Mova um orçamento para &quot;Em produção&quot; para gerar a entrada.
+                <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  Nenhum lançamento. Mova um orçamento para &quot;Em produção&quot; para gerar a
+                  entrada.
                 </TableCell>
               </TableRow>
             )}

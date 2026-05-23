@@ -9,6 +9,7 @@ import type {
   Servico,
   StatusOrcamento,
 } from "./types";
+import { newId } from "./id";
 import {
   clientesRepo,
   empresaRepo,
@@ -186,7 +187,7 @@ export function gerarNumeroOrcamento(existentes: Orcamento[]): string {
 
 export function novoItem(parcial?: Partial<OrcamentoItem>): OrcamentoItem {
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     nome: "",
     quantidade: 1,
     valor_unitario: 0,

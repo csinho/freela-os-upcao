@@ -83,8 +83,7 @@ function matchesSearch(o: Orcamento, q: string, clientes: Cliente[]): boolean {
   if (
     o.itens.some(
       (i) =>
-        i.nome.toLowerCase().includes(term) ||
-        (i.descricao?.toLowerCase().includes(term) ?? false),
+        i.nome.toLowerCase().includes(term) || (i.descricao?.toLowerCase().includes(term) ?? false),
     )
   ) {
     return true;
@@ -113,9 +112,7 @@ function KanbanPage() {
     });
   }, [orcamentos, clientes, search, dates]);
 
-  const hasFilters =
-    !!search.trim() ||
-    Object.values(dates).some((v) => v);
+  const hasFilters = !!search.trim() || Object.values(dates).some((v) => v);
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
   const onDragEnd = (e: DragEndEvent) => {
@@ -175,7 +172,8 @@ function KanbanPage() {
           <div>
             <h1 className="text-2xl font-semibold">Kanban</h1>
             <p className="text-sm text-muted-foreground">
-              Arraste os cards entre as etapas. {hasFilters && `${filtered.length} de ${orcamentos.length} exibidos.`}
+              Arraste os cards entre as etapas.{" "}
+              {hasFilters && `${filtered.length} de ${orcamentos.length} exibidos.`}
             </p>
           </div>
           {hasFilters && (
@@ -224,35 +222,35 @@ function KanbanPage() {
 
       <div className="flex flex-col flex-1 min-h-0">
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-          <div className="flex-1 min-h-0 overflow-x-auto pb-1 h-full flex flex-col">
-            <div className="grid grid-cols-4 gap-4 flex-1 min-h-0 min-w-[56rem]">
-            {STATUS_ORDER.map((s) => {
-              const items = filtered.filter((o) => o.status === s);
-              return (
-                <Column
-                  key={s}
-                  status={s}
-                  count={items.length}
-                  total={items.reduce((a, o) => a + calcTotal(o), 0)}
-                >
-                  {items.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-6 px-2">
-                      Nenhum card
-                    </p>
-                  ) : (
-                    items.map((o) => (
-                      <Draggable
-                        key={o.id}
-                        id={o.id}
-                        onOpen={() => navigate({ to: "/orcamentos/$id", params: { id: o.id } })}
-                      >
-                        {renderCard(o.id)}
-                      </Draggable>
-                    ))
-                  )}
-                </Column>
-              );
-            })}
+          <div className="flex-1 min-h-0 overflow-x-auto pb-1 h-full flex flex-col -mx-1 px-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 min-h-0 xl:min-w-[56rem]">
+              {STATUS_ORDER.map((s) => {
+                const items = filtered.filter((o) => o.status === s);
+                return (
+                  <Column
+                    key={s}
+                    status={s}
+                    count={items.length}
+                    total={items.reduce((a, o) => a + calcTotal(o), 0)}
+                  >
+                    {items.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-6 px-2">
+                        Nenhum card
+                      </p>
+                    ) : (
+                      items.map((o) => (
+                        <Draggable
+                          key={o.id}
+                          id={o.id}
+                          onOpen={() => navigate({ to: "/orcamentos/$id", params: { id: o.id } })}
+                        >
+                          {renderCard(o.id)}
+                        </Draggable>
+                      ))
+                    )}
+                  </Column>
+                );
+              })}
             </div>
           </div>
           <DragOverlay>{activeId ? renderCard(activeId) : null}</DragOverlay>
@@ -278,10 +276,20 @@ function DateRangeFilter({
   return (
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex gap-2 items-center">
-        <Input type="date" value={de} onChange={(e) => onDe(e.target.value)} className="text-xs" />
-        <span className="text-xs text-muted-foreground shrink-0">até</span>
-        <Input type="date" value={ate} onChange={(e) => onAte(e.target.value)} className="text-xs" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          type="date"
+          value={de}
+          onChange={(e) => onDe(e.target.value)}
+          className="text-xs flex-1 min-w-0"
+        />
+        <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline">até</span>
+        <Input
+          type="date"
+          value={ate}
+          onChange={(e) => onAte(e.target.value)}
+          className="text-xs flex-1 min-w-0"
+        />
       </div>
     </div>
   );
@@ -327,7 +335,9 @@ function Draggable({
   onOpen: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
-  const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
+  const style = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
+    : undefined;
   return (
     <div
       ref={setNodeRef}
