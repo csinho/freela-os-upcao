@@ -3,18 +3,19 @@ import {
   useOrcamentos,
   useClientes,
   useEmpresa,
-  useUpsertOrcamento,
   gerarNumeroOrcamento,
 } from "@/lib/store";
 import type { Orcamento } from "@/lib/types";
-import { calcTotal, formatBRL, formatDate, STATUS_LABEL } from "@/lib/types";
+import { calcTotal, formatBRL, formatDate, labelDocumento, STATUS_LABEL } from "@/lib/types";
+import { newId } from "@/lib/id";
+import { saveOrcamentoDraft } from "@/lib/orcamento-draft";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos/")({
-  head: () => ({ meta: [{ title: "Orçamentos — Freela OS" }] }),
+  head: () => ({ meta: [{ title: "Orçamentos e pedidos — Freela OS" }] }),
   component: OrcamentosList,
 });
 
@@ -22,45 +23,46 @@ function OrcamentosList() {
   const { data: orcamentos = [], isLoading } = useOrcamentos();
   const { data: clientes = [] } = useClientes();
   const { data: empresa } = useEmpresa();
-  const upsert = useUpsertOrcamento();
   const navigate = useNavigate();
 
   const novo = () => {
     const o: Orcamento = {
-      id: crypto.randomUUID(),
+      id: newId(),
       numero: gerarNumeroOrcamento(orcamentos),
-      cliente_id: clientes[0]?.id || "",
+      cliente_id: clientes[0]?.id ?? "",
       nome_projeto: "Novo projeto",
       status: "orcamento",
       itens: [],
-      desconto: 0,
+      desconto_percentual: 0,
       acrescimo: 0,
       condicoes: empresa?.condicoes_padrao,
       observacoes: empresa?.observacoes_padrao,
       data_criacao: new Date().toISOString(),
       historico: [],
     };
-    upsert.mutate(o, {
-      onSuccess: () => navigate({ to: "/orcamentos/$id", params: { id: o.id } }),
-    });
+    saveOrcamentoDraft(o);
+    navigate({ to: "/orcamentos/$id", params: { id: o.id } });
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Orçamentos</h1>
+          <h1 className="text-2xl font-semibold">Orçamentos e pedidos</h1>
           <p className="text-sm text-muted-foreground">
             {isLoading ? "Carregando…" : `${orcamentos.length} registros`}
           </p>
         </div>
-        <Button onClick={novo} disabled={upsert.isPending}><Plus className="h-4 w-4 mr-1" /> Novo orçamento</Button>
+        <Button type="button" onClick={novo}>
+          <Plus className="h-4 w-4 mr-1" /> Novo orçamento
+        </Button>
       </div>
 
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Tipo</TableHead>
               <TableHead>Número</TableHead>
               <TableHead>Projeto</TableHead>
               <TableHead>Cliente</TableHead>
@@ -74,6 +76,11 @@ function OrcamentosList() {
               const cli = clientes.find((c) => c.id === o.cliente_id);
               return (
                 <TableRow key={o.id} className="cursor-pointer" onClick={() => navigate({ to: "/orcamentos/$id", params: { id: o.id } })}>
+                  <TableCell>
+                    <Badge variant={o.status === "orcamento" ? "outline" : "default"} className="text-[10px]">
+                      {labelDocumento(o.status)}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{o.numero}</TableCell>
                   <TableCell className="font-medium">{o.nome_projeto}</TableCell>
                   <TableCell>{cli?.nome ?? "—"}</TableCell>

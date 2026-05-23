@@ -49,6 +49,7 @@ create table if not exists orcamentos (
   descricao text,
   status text default 'orcamento',
   desconto numeric(12,2) default 0,
+  desconto_percentual numeric(5,2) default 0,
   acrescimo numeric(12,2) default 0,
   forma_pagamento text,
   prazo_entrega timestamptz,

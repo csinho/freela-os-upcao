@@ -1,11 +1,30 @@
 import { Document, Page, Text, View, StyleSheet, Image, PDFViewer, PDFDownloadLink, Font } from "@react-pdf/renderer";
 import type { Cliente, Empresa, Orcamento } from "@/lib/types";
-import { calcSubtotal, calcTotal, formatBRL, formatDate } from "@/lib/types";
+import {
+  calcDescontoValor,
+  calcSubtotal,
+  calcTotal,
+  formatBRL,
+  formatDate,
+  formatPercentLabel,
+  labelDocumento,
+  labelDocumentoLower,
+} from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
+const PAGE_PAD = 28;
+const BOTTOM_BLOCK_H = 118;
+
 const s = StyleSheet.create({
-  page: { padding: 28, fontSize: 9, fontFamily: "Helvetica", color: "#111" },
+  page: {
+    padding: PAGE_PAD,
+    paddingBottom: PAGE_PAD + BOTTOM_BLOCK_H,
+    fontSize: 9,
+    fontFamily: "Helvetica",
+    color: "#111",
+    position: "relative",
+  },
   row: { flexDirection: "row" },
   between: { flexDirection: "row", justifyContent: "space-between" },
   headerWrap: { flexDirection: "row", justifyContent: "space-between", borderBottom: "2 solid #111", paddingBottom: 10, marginBottom: 12 },
@@ -25,9 +44,23 @@ const s = StyleSheet.create({
   td: { padding: 5, fontSize: 8, borderBottom: "0.5 solid #ddd" },
   totalsRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
   totalFinal: { flexDirection: "row", justifyContent: "space-between", paddingTop: 4, marginTop: 4, borderTop: "1 solid #111", fontSize: 11, fontWeight: 700 },
-  footer: { marginTop: 18, paddingTop: 10, borderTop: "1 solid #ddd", fontSize: 8, color: "#444" },
-  signBox: { marginTop: 14, flexDirection: "row", gap: 16 },
-  signCol: { flex: 1, borderTop: "1 solid #111", paddingTop: 4, fontSize: 8, textAlign: "center" },
+  pageBottom: {
+    position: "absolute",
+    bottom: PAGE_PAD,
+    left: PAGE_PAD,
+    right: PAGE_PAD,
+  },
+  signBox: { flexDirection: "row", gap: 24, marginBottom: 14 },
+  signCol: { flex: 1 },
+  signLine: { borderTop: "1 solid #111", height: 42, marginBottom: 6 },
+  signLabel: { fontSize: 8, color: "#444", textAlign: "center" },
+  footer: {
+    fontSize: 8,
+    color: "#666",
+    textAlign: "center",
+    paddingTop: 8,
+    borderTop: "0.5 solid #ddd",
+  },
 });
 
 function enderecoLinha(e?: { rua?: string; numero?: string; bairro?: string; cidade?: string; estado?: string; cep?: string }) {
@@ -39,8 +72,11 @@ function enderecoLinha(e?: { rua?: string; numero?: string; bairro?: string; cid
 
 export function OrcamentoDoc({ orcamento, empresa, cliente }: { orcamento: Orcamento; empresa: Empresa; cliente?: Cliente }) {
   const subtotal = calcSubtotal(orcamento.itens);
+  const descontoValor = calcDescontoValor(subtotal, orcamento.desconto_percentual);
   const total = calcTotal(orcamento);
   const itens = orcamento.itens;
+  const docLabel = labelDocumento(orcamento.status).toUpperCase();
+  const itensTitulo = `Itens do ${labelDocumentoLower(orcamento.status)}`;
 
   return (
     <Document>
@@ -58,7 +94,7 @@ export function OrcamentoDoc({ orcamento, empresa, cliente }: { orcamento: Orcam
             </View>
           </View>
           <View style={s.rightBox}>
-            <Text style={s.docTitle}>ORÇAMENTO</Text>
+            <Text style={s.docTitle}>{docLabel}</Text>
             <Text style={s.docNumber}>{orcamento.numero}</Text>
             <Text style={s.small}>Emissão: {formatDate(orcamento.data_criacao)}</Text>
             {orcamento.validade && <Text style={s.small}>Validade: {formatDate(orcamento.validade)}</Text>}
@@ -84,7 +120,7 @@ export function OrcamentoDoc({ orcamento, empresa, cliente }: { orcamento: Orcam
 
         {/* Itens */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Itens do orçamento</Text>
+          <Text style={s.sectionTitle}>{itensTitulo}</Text>
           <View style={s.row}>
             <Text style={[s.th, { flex: 0.4 }]}>#</Text>
             <Text style={[s.th, { flex: 3 }]}>Serviço / Descrição</Text>
@@ -113,7 +149,15 @@ export function OrcamentoDoc({ orcamento, empresa, cliente }: { orcamento: Orcam
           <View style={{ flex: 1 }} />
           <View style={{ width: 220, padding: 8, border: "1 solid #ddd", borderRadius: 4 }}>
             <View style={s.totalsRow}><Text>Subtotal</Text><Text>{formatBRL(subtotal)}</Text></View>
-            <View style={s.totalsRow}><Text>Desconto</Text><Text>- {formatBRL(orcamento.desconto || 0)}</Text></View>
+            <View style={s.totalsRow}>
+              <Text>
+                Desconto
+                {orcamento.desconto_percentual > 0
+                  ? ` (${formatPercentLabel(orcamento.desconto_percentual)})`
+                  : ""}
+              </Text>
+              <Text>- {formatBRL(descontoValor)}</Text>
+            </View>
             <View style={s.totalsRow}><Text>Acréscimo</Text><Text>+ {formatBRL(orcamento.acrescimo || 0)}</Text></View>
             <View style={s.totalFinal}><Text>Total</Text><Text>{formatBRL(total)}</Text></View>
           </View>
@@ -133,15 +177,25 @@ export function OrcamentoDoc({ orcamento, empresa, cliente }: { orcamento: Orcam
           </View>
         </View>
 
-        {/* Aceite */}
-        <View style={s.signBox}>
-          <Text style={s.signCol}>Data do aceite</Text>
-          <Text style={s.signCol}>Assinatura do cliente — {cliente?.nome || ""}</Text>
+        {/* Assinaturas + rodapé fixos na base da página */}
+        <View style={s.pageBottom}>
+          <View style={s.signBox}>
+            <View style={s.signCol}>
+              <View style={s.signLine} />
+              <Text style={s.signLabel}>Data do aceite</Text>
+            </View>
+            <View style={s.signCol}>
+              <View style={s.signLine} />
+              <Text style={s.signLabel}>
+                Assinatura do cliente{cliente?.nome ? ` — ${cliente.nome}` : ""}
+              </Text>
+            </View>
+          </View>
+          <Text style={s.footer}>
+            {empresa.nome} · {formatDate(orcamento.data_criacao)} · {labelDocumento(orcamento.status)}{" "}
+            {orcamento.numero}
+          </Text>
         </View>
-
-        <Text style={s.footer}>
-          {empresa.nome} · {formatDate(orcamento.data_criacao)} · Orçamento {orcamento.numero}
-        </Text>
       </Page>
     </Document>
   );

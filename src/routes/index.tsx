@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useOrcamentos, useFinanceiro } from "@/lib/store";
-import { calcTotal, formatBRL, formatDate, STATUS_LABEL } from "@/lib/types";
+import { calcTotal, formatBRL, formatDate, labelDocumento, STATUS_LABEL } from "@/lib/types";
 import type { StatusOrcamento } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ function Dashboard() {
     .slice(0, 5);
 
   const proximosVenc = [...financeiro]
-    .filter((f) => f.status !== "pago")
+    .filter((f) => f.orcamento_id && f.status !== "pago")
     .sort((a, b) => +new Date(a.vencimento) - +new Date(b.vencimento))
     .slice(0, 5);
 
@@ -71,7 +71,7 @@ function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Últimos orçamentos</CardTitle>
+            <CardTitle className="text-base">Últimos orçamentos e pedidos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {ultimos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum orçamento.</p>}
@@ -79,7 +79,9 @@ function Dashboard() {
               <Link key={o.id} to="/orcamentos/$id" params={{ id: o.id }} className="flex items-center justify-between rounded-md border p-3 hover:bg-accent">
                 <div>
                   <div className="font-medium text-sm">{o.nome_projeto}</div>
-                  <div className="text-xs text-muted-foreground">{o.numero} · {formatDate(o.data_criacao)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {labelDocumento(o.status as StatusOrcamento)} · {o.numero} · {formatDate(o.data_criacao)}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">{formatBRL(calcTotal(o))}</div>

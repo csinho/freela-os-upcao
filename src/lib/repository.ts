@@ -10,7 +10,8 @@ import type {
   StatusOrcamento,
   UnidadeServico,
 } from "./types";
-import { calcTotal } from "./types";
+import { parseRedesSociais, serializeRedesSociais } from "./types";
+import { calcDescontoValor, calcSubtotal, calcTotal } from "./types";
 
 function err<T>(data: T | null, error: { message: string } | null): T {
   if (error) throw new Error(error.message);
@@ -40,7 +41,7 @@ export const empresaRepo = {
       email: data.email ?? undefined,
       endereco: (data.endereco as Record<string, string>) ?? {},
       site: data.site ?? undefined,
-      redes_sociais: data.redes_sociais ?? undefined,
+      redes_sociais: parseRedesSociais(data.redes_sociais),
       dados_bancarios: data.dados_bancarios ?? undefined,
       condicoes_padrao: data.condicoes_padrao ?? undefined,
       observacoes_padrao: data.observacoes_padrao ?? undefined,
@@ -56,7 +57,7 @@ export const empresaRepo = {
       email: e.email ?? null,
       endereco: e.endereco ?? {},
       site: e.site ?? null,
-      redes_sociais: e.redes_sociais ?? null,
+      redes_sociais: serializeRedesSociais(e.redes_sociais ?? []) ?? null,
       dados_bancarios: e.dados_bancarios ?? null,
       condicoes_padrao: e.condicoes_padrao ?? null,
       observacoes_padrao: e.observacoes_padrao ?? null,
@@ -164,7 +165,7 @@ function mapOrcamento(r: any): Orcamento {
     descricao: r.descricao ?? undefined,
     status: (r.status as StatusOrcamento) ?? "orcamento",
     itens,
-    desconto: Number(r.desconto) || 0,
+    desconto_percentual: resolveDescontoPercentual(r, itens),
     acrescimo: Number(r.acrescimo) || 0,
     forma_pagamento: r.forma_pagamento ?? undefined,
     prazo_entrega: r.prazo_entrega ?? undefined,
@@ -176,6 +177,20 @@ function mapOrcamento(r: any): Orcamento {
     data_entrega: r.data_entrega ?? undefined,
     historico,
   };
+}
+
+function resolveDescontoPercentual(
+  r: { desconto_percentual?: unknown; desconto?: unknown },
+  itens: Orcamento["itens"],
+): number {
+  if (r.desconto_percentual != null && r.desconto_percentual !== "") {
+    return Math.min(100, Number(r.desconto_percentual) || 0);
+  }
+  const sub = calcSubtotal(itens);
+  const legacy = Number(r.desconto) || 0;
+  if (legacy <= 0 || sub <= 0) return 0;
+  if (legacy <= 100) return legacy;
+  return Math.min(100, Math.round((legacy / sub) * 10000) / 100);
 }
 
 const ORC_SELECT = "*, orcamento_itens(*), historico_status(*)";
@@ -198,14 +213,17 @@ export const orcamentosRepo = {
     return data ? mapOrcamento(data) : null;
   },
   async upsert(o: Orcamento): Promise<void> {
-    const head = {
+    const sub = calcSubtotal(o.itens);
+    const descontoValor = calcDescontoValor(sub, o.desconto_percentual ?? 0);
+    const head: Record<string, unknown> = {
       id: o.id,
       numero: o.numero,
       cliente_id: o.cliente_id || null,
       nome_projeto: o.nome_projeto,
       descricao: o.descricao ?? null,
       status: o.status,
-      desconto: o.desconto,
+      desconto: descontoValor,
+      desconto_percentual: o.desconto_percentual ?? 0,
       acrescimo: o.acrescimo,
       forma_pagamento: o.forma_pagamento ?? null,
       prazo_entrega: o.prazo_entrega ?? null,
@@ -241,6 +259,40 @@ export const orcamentosRepo = {
       const { error: eIns } = await supabase.from("orcamento_itens").insert(rows);
       if (eIns) throw new Error(eIns.message);
     }
+
+    if (o.status !== "orcamento") {
+      const total = calcTotal(o);
+      const payload = {
+        tipo: "receber" as const,
+        descricao: `Pedido — ${o.nome_projeto} (${o.numero})`,
+        cliente_id: o.cliente_id || null,
+        orcamento_id: o.id,
+        valor: total,
+        vencimento: o.prazo_entrega ?? new Date().toISOString(),
+        status: "pendente" as const,
+        forma_pagamento: o.forma_pagamento ?? null,
+      };
+      const { data: existentes } = await supabase
+        .from("financeiro")
+        .select("id")
+        .eq("orcamento_id", o.id)
+        .eq("tipo", "receber");
+      if (existentes?.length) {
+        const { error: eFin } = await supabase
+          .from("financeiro")
+          .update({
+            valor: payload.valor,
+            descricao: payload.descricao,
+            vencimento: payload.vencimento,
+          })
+          .eq("orcamento_id", o.id)
+          .eq("tipo", "receber");
+        if (eFin) throw new Error(eFin.message);
+      } else {
+        const { error: eFin } = await supabase.from("financeiro").insert(payload);
+        if (eFin) throw new Error(eFin.message);
+      }
+    }
   },
   async remove(id: string): Promise<void> {
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
@@ -268,7 +320,9 @@ export const orcamentosRepo = {
     });
     if (eHist) throw new Error(eHist.message);
 
-    // criar conta a receber automaticamente ao aprovar
+    const total = calcTotal(atual);
+
+    // Pedido aprovado (em produção): gera lançamento a receber
     if (status === "em_producao") {
       const { data: existentes } = await supabase
         .from("financeiro")
@@ -276,10 +330,9 @@ export const orcamentosRepo = {
         .eq("orcamento_id", id)
         .eq("tipo", "receber");
       if (!existentes || existentes.length === 0) {
-        const total = calcTotal(atual);
-        await supabase.from("financeiro").insert({
+        const { error: eFin } = await supabase.from("financeiro").insert({
           tipo: "receber",
-          descricao: `Recebimento — ${atual.nome_projeto} (${atual.numero})`,
+          descricao: `Pedido — ${atual.nome_projeto} (${atual.numero})`,
           cliente_id: atual.cliente_id || null,
           orcamento_id: id,
           valor: total,
@@ -287,7 +340,32 @@ export const orcamentosRepo = {
           status: "pendente",
           forma_pagamento: atual.forma_pagamento ?? null,
         });
+        if (eFin) throw new Error(eFin.message);
+      } else {
+        const { error: eUpFin } = await supabase
+          .from("financeiro")
+          .update({
+            valor: total,
+            descricao: `Pedido — ${atual.nome_projeto} (${atual.numero})`,
+            vencimento: atual.prazo_entrega ?? new Date().toISOString(),
+          })
+          .eq("orcamento_id", id)
+          .eq("tipo", "receber");
+        if (eUpFin) throw new Error(eUpFin.message);
       }
+    }
+
+    // Entregue: marca o lançamento do pedido como pago
+    if (status === "entregue") {
+      const { error: ePago } = await supabase
+        .from("financeiro")
+        .update({
+          status: "pago",
+          pagamento: new Date().toISOString(),
+        })
+        .eq("orcamento_id", id)
+        .eq("tipo", "receber");
+      if (ePago) throw new Error(ePago.message);
     }
   },
 };

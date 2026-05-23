@@ -1,7 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://tdtmxddukuqsxsiiwzqp.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_sV6Tal25v-z7Def-bEPV1A_v5IpDrpr";
+function requireViteEnv(name: keyof ImportMetaEnv): string {
+  const value = import.meta.env[name];
+  if (!value) {
+    throw new Error(
+      `${name} não está definida. Crie um arquivo .env local (veja .env.example) ou configure a variável no EasyPanel antes do build.`,
+    );
+  }
+  return value;
+}
+
+const SUPABASE_URL = requireViteEnv("VITE_SUPABASE_URL");
+const SUPABASE_PUBLISHABLE_KEY = requireViteEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false },

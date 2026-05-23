@@ -14,7 +14,7 @@ Mais duas seções:
 
 Colunas: **Orçamento → Em produção → Vistoria → Entregue**.
 
-- Cards arrastáveis com @dnd-kit; ao soltar, o status é atualizado em `store.moveOrcamento`.
+- Cards arrastáveis com @dnd-kit; ao soltar, o status é atualizado via `useMoveOrcamento` (Supabase).
 - **Aprovação automática:** ao mover para *Em produção*, registra `data_aprovacao` e cria automaticamente uma conta a receber no Financeiro (apenas uma — se já existir vinculada, não duplica).
 - Ao mover para *Entregue*, registra `data_entrega`.
 - O card mostra cliente, valor, prazo e indicador financeiro (Pago/Parcial/Pendente) derivado dos lançamentos vinculados.
@@ -36,7 +36,7 @@ Lista tabular + tela de edição.
 1. Clicar em **Novo orçamento** — cria registro com `numero` automático (`ORC-YYYYMMDD-NNNNN`) e status `orcamento`.
 2. Selecionar cliente, preencher projeto, adicionar itens (do catálogo ou em branco).
 3. Editar qtd / valor unitário; subtotal é calculado em tempo real.
-4. Aplicar **Desconto** / **Acréscimo** — total atualizado automaticamente.
+4. Aplicar **Desconto** (em **%**, ex.: `20%`) / **Acréscimo** — total e valor do desconto em R$ atualizados automaticamente; no PDF aparecem percentual e valor.
 5. Preencher forma de pagamento, prazo, validade, condições e observações (preenche com os textos padrão da empresa).
 6. **Salvar.**
 
@@ -52,17 +52,18 @@ Alterar status para **Em produção** (no select da topbar ou arrastando no Kanb
 
 ## 6. Financeiro (`/financeiro`)
 
-Lançamentos de **pagar** ou **receber** com status (pendente, pago, parcial, atrasado) e vínculo opcional a cliente/orçamento. Filtro rápido por tipo. Os totais alimentam o Dashboard.
+Lista lançamentos **vinculados a pedidos** (`orcamento_id`). Não há criação manual — entradas são geradas ao mover o pedido para *Em produção* e marcadas como pagas em *Entregue*. Os totais alimentam o Dashboard.
 
 ## 7. Empresa (`/empresa`)
 
-Cadastro único da sua empresa. Inclui upload de logo (convertida para Data URL e salva em `localStorage`), endereço, dados bancários/Pix, e textos padrão de **condições** e **observações** que são pré-preenchidos em novos orçamentos.
+Cadastro único da sua empresa. Upload de logo (Data URL no Supabase) — exibida no rodapé do sidebar e como favicon. Endereço, dados bancários/Pix, redes sociais (JSON), e textos padrão de **condições** e **observações** pré-preenchidos em novos orçamentos.
 
 ## Cálculos
 
 ```ts
 subtotal = Σ (item.quantidade × item.valor_unitario)
-total    = subtotal - desconto + acrescimo
+desconto (R$) = subtotal × (desconto_percentual / 100)
+total         = subtotal - desconto (R$) + acrescimo
 ```
 
-Helpers em `src/lib/types.ts`: `calcSubtotal`, `calcTotal`, `formatBRL`, `formatDate`.
+Helpers em `src/lib/types.ts`: `calcSubtotal`, `calcDescontoValor`, `calcTotal`, `formatBRL`, `formatDate`, `formatPercentLabel`.

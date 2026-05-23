@@ -1,6 +1,6 @@
 # Banco de Dados
 
-A estrutura segue exatamente os tipos em `src/lib/types.ts`. Quando migrar para Supabase, use o SQL abaixo como base.
+A estrutura segue os tipos em `src/lib/types.ts` e está implementada no Supabase. Script completo: `docs/setup-supabase.sql`. Migrações incrementais: `docs/migrations/`.
 
 ## Tabelas
 
@@ -52,7 +52,8 @@ A estrutura segue exatamente os tipos em `src/lib/types.ts`. Quando migrar para 
 | nome_projeto | text |
 | descricao | text |
 | status | text check in ('orcamento','em_producao','vistoria','entregue') |
-| desconto | numeric(12,2) default 0 |
+| desconto | numeric(12,2) default 0 — valor em R$ (calculado a partir do percentual) |
+| desconto_percentual | numeric(5,2) default 0 — percentual 0–100 sobre o subtotal |
 | acrescimo | numeric(12,2) default 0 |
 | forma_pagamento | text |
 | prazo_entrega | timestamptz |

@@ -1,58 +1,41 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  useFinanceiro,
-  useClientes,
-  useOrcamentos,
-  useUpsertFinanceiro,
-  useRemoveFinanceiro,
-} from "@/lib/store";
-import type { Financeiro, StatusFinanceiro, TipoFinanceiro } from "@/lib/types";
+import { useFinanceiro, useClientes, useOrcamentos } from "@/lib/store";
+import type { TipoFinanceiro } from "@/lib/types";
 import { formatBRL, formatDate } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({ meta: [{ title: "Financeiro — Freela OS" }] }),
   component: FinanceiroPage,
 });
 
-const empty = (): Financeiro => ({
-  id: crypto.randomUUID(),
-  tipo: "receber",
-  descricao: "",
-  valor: 0,
-  vencimento: new Date().toISOString(),
-  status: "pendente",
-});
-
-const statusVariant: Record<StatusFinanceiro, "default" | "secondary" | "destructive" | "outline"> = {
+const statusVariant = {
   pago: "default",
   pendente: "secondary",
   parcial: "outline",
   atrasado: "destructive",
-};
+} as const;
 
 function FinanceiroPage() {
   const { data: financeiro = [], isLoading } = useFinanceiro();
   const { data: clientes = [] } = useClientes();
-  const upsert = useUpsertFinanceiro();
-  const remove = useRemoveFinanceiro();
-  const [editing, setEditing] = useState<Financeiro | null>(null);
+  const { data: orcamentos = [] } = useOrcamentos();
   const [filter, setFilter] = useState<"todos" | TipoFinanceiro>("todos");
 
-  const list = financeiro.filter((f) => filter === "todos" || f.tipo === filter);
+  const list = financeiro
+    .filter((f) => f.orcamento_id)
+    .filter((f) => filter === "todos" || f.tipo === filter);
 
   const totals = {
-    receber: financeiro.filter((f) => f.tipo === "receber" && f.status !== "pago").reduce((a, f) => a + f.valor, 0),
-    pagar: financeiro.filter((f) => f.tipo === "pagar" && f.status !== "pago").reduce((a, f) => a + f.valor, 0),
+    receber: financeiro
+      .filter((f) => f.tipo === "receber" && f.status !== "pago" && f.orcamento_id)
+      .reduce((a, f) => a + f.valor, 0),
+    recebido: financeiro
+      .filter((f) => f.tipo === "receber" && f.status === "pago" && f.orcamento_id)
+      .reduce((a, f) => a + f.valor, 0),
   };
 
   return (
@@ -61,121 +44,77 @@ function FinanceiroPage() {
         <div>
           <h1 className="text-2xl font-semibold">Financeiro</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `A receber: ${formatBRL(totals.receber)} · A pagar: ${formatBRL(totals.pagar)}`}
+            Lançamentos gerados automaticamente quando o orçamento vira pedido (em produção). Marcados
+            como pagos ao entregar.
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isLoading
+              ? "Carregando…"
+              : `A receber: ${formatBRL(totals.receber)} · Recebido: ${formatBRL(totals.recebido)}`}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Select value={filter} onValueChange={(v) => setFilter(v as "todos" | TipoFinanceiro)}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="receber">A receber</SelectItem>
-              <SelectItem value="pagar">A pagar</SelectItem>
-            </SelectContent>
-          </Select>
-          <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-            <DialogTrigger asChild><Button onClick={() => setEditing(empty())}><Plus className="h-4 w-4 mr-1" /> Lançamento</Button></DialogTrigger>
-            {editing && (
-              <FinForm
-                value={editing}
-                onSave={(f) => upsert.mutate(f, { onSuccess: () => setEditing(null) })}
-              />
-            )}
-          </Dialog>
-        </div>
+        <Select value={filter} onValueChange={(v) => setFilter(v as "todos" | TipoFinanceiro)}>
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="receber">A receber</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Pedido</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Vencimento</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="w-24"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {list.map((f) => {
               const cli = clientes.find((c) => c.id === f.cliente_id);
+              const ped = orcamentos.find((o) => o.id === f.orcamento_id);
               return (
                 <TableRow key={f.id}>
-                  <TableCell><Badge variant={f.tipo === "receber" ? "default" : "secondary"}>{f.tipo}</Badge></TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {ped ? (
+                      <Link
+                        to="/orcamentos/$id"
+                        params={{ id: ped.id }}
+                        className="text-primary hover:underline"
+                      >
+                        {ped.numero}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                   <TableCell>{f.descricao}</TableCell>
                   <TableCell>{cli?.nome ?? "—"}</TableCell>
                   <TableCell>{formatDate(f.vencimento)}</TableCell>
-                  <TableCell><Badge variant={statusVariant[f.status]}>{f.status}</Badge></TableCell>
-                  <TableCell className="text-right font-medium">{formatBRL(f.valor)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(f)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => confirm("Remover?") && remove.mutate(f.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <TableCell>
+                    <Badge variant={statusVariant[f.status]}>{f.status}</Badge>
                   </TableCell>
+                  <TableCell className="text-right font-medium">{formatBRL(f.valor)}</TableCell>
                 </TableRow>
               );
             })}
-            {list.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">Sem lançamentos.</TableCell></TableRow>}
+            {list.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                  Nenhum lançamento. Mova um orçamento para &quot;Em produção&quot; para gerar a entrada.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
     </div>
-  );
-}
-
-function FinForm({ value, onSave }: { value: Financeiro; onSave: (f: Financeiro) => void }) {
-  const { data: clientes = [] } = useClientes();
-  const { data: orcamentos = [] } = useOrcamentos();
-  const [f, setF] = useState(value);
-  return (
-    <DialogContent className="max-w-xl">
-      <DialogHeader><DialogTitle>Lançamento financeiro</DialogTitle></DialogHeader>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label>Tipo</Label>
-          <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v as TipoFinanceiro })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="receber">A receber</SelectItem>
-              <SelectItem value="pagar">A pagar</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>Status</Label>
-          <Select value={f.status} onValueChange={(v) => setF({ ...f, status: v as StatusFinanceiro })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pendente">Pendente</SelectItem>
-              <SelectItem value="pago">Pago</SelectItem>
-              <SelectItem value="parcial">Parcial</SelectItem>
-              <SelectItem value="atrasado">Atrasado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-2"><Label>Descrição</Label><Input value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })} /></div>
-        <div><Label>Valor</Label><Input type="number" step="0.01" value={f.valor} onChange={(e) => setF({ ...f, valor: parseFloat(e.target.value) || 0 })} /></div>
-        <div><Label>Forma de pagamento</Label><Input value={f.forma_pagamento || ""} onChange={(e) => setF({ ...f, forma_pagamento: e.target.value })} /></div>
-        <div><Label>Vencimento</Label><Input type="date" value={f.vencimento.slice(0, 10)} onChange={(e) => setF({ ...f, vencimento: new Date(e.target.value).toISOString() })} /></div>
-        <div><Label>Pagamento</Label><Input type="date" value={f.pagamento?.slice(0, 10) || ""} onChange={(e) => setF({ ...f, pagamento: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /></div>
-        <div className="col-span-2">
-          <Label>Cliente</Label>
-          <Select value={f.cliente_id || ""} onValueChange={(v) => setF({ ...f, cliente_id: v || undefined })}>
-            <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-            <SelectContent>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-2">
-          <Label>Orçamento vinculado</Label>
-          <Select value={f.orcamento_id || ""} onValueChange={(v) => setF({ ...f, orcamento_id: v || undefined })}>
-            <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-            <SelectContent>{orcamentos.map((o) => <SelectItem key={o.id} value={o.id}>{o.numero} — {o.nome_projeto}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-2"><Label>Observações</Label><Textarea value={f.observacoes || ""} onChange={(e) => setF({ ...f, observacoes: e.target.value })} /></div>
-      </div>
-      <DialogFooter><Button onClick={() => f.descricao && onSave(f)}>Salvar</Button></DialogFooter>
-    </DialogContent>
   );
 }

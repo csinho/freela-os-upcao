@@ -10,8 +10,19 @@ import {
   useMoveOrcamento,
   novoItem,
 } from "@/lib/store";
+import { clearOrcamentoDraft, loadOrcamentoDraft } from "@/lib/orcamento-draft";
 import type { Cliente, Empresa, Orcamento, OrcamentoItem, StatusOrcamento } from "@/lib/types";
-import { calcSubtotal, calcTotal, formatBRL, STATUS_LABEL, STATUS_ORDER } from "@/lib/types";
+import {
+  calcDescontoValor,
+  calcSubtotal,
+  calcTotal,
+  formatBRL,
+  formatPercentLabel,
+  labelDocumento,
+  STATUS_LABEL,
+  STATUS_ORDER,
+} from "@/lib/types";
+import { formatPercentInput, maskPercent, parsePercent } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +52,7 @@ function ClientOnlyPDF({ kind, ...props }: PdfProps & { kind: "preview" | "downl
 }
 
 export const Route = createFileRoute("/orcamentos/$id")({
-  head: () => ({ meta: [{ title: "Orçamento — Freela OS" }] }),
+  head: () => ({ meta: [{ title: "Orçamento / Pedido — Freela OS" }] }),
   component: OrcamentoDetail,
 });
 
@@ -59,23 +70,34 @@ function OrcamentoDetail() {
   const [preview, setPreview] = useState(false);
 
   useEffect(() => {
-    if (original) setO(original);
-  }, [original]);
+    if (original) {
+      setO(original);
+      clearOrcamentoDraft(id);
+      return;
+    }
+    if (!isLoading) {
+      const draft = loadOrcamentoDraft(id);
+      if (draft) setO(draft);
+    }
+  }, [original, isLoading, id]);
 
   if (isLoading || !empresa) {
     return <p className="text-sm text-muted-foreground">Carregando…</p>;
   }
 
-  if (!original || !o) {
+  if (!o) {
     return (
       <div className="space-y-4">
-        <p>Orçamento não encontrado.</p>
-        <Button onClick={() => navigate({ to: "/orcamentos" })}>Voltar</Button>
+        <p>Registro não encontrado.</p>
+        <Button type="button" onClick={() => navigate({ to: "/orcamentos" })}>
+          Voltar
+        </Button>
       </div>
     );
   }
 
   const subtotal = calcSubtotal(o.itens);
+  const descontoValor = calcDescontoValor(subtotal, o.desconto_percentual);
   const total = calcTotal(o);
 
   const addItem = (servicoId?: string) => {
@@ -97,8 +119,17 @@ function OrcamentoDetail() {
 
   const removeItem = (i: number) => setO({ ...o, itens: o.itens.filter((_, idx) => idx !== i) });
 
-  const save = () => upsert.mutate(o);
-  const saveAndExit = () => upsert.mutate(o, { onSuccess: () => navigate({ to: "/orcamentos" }) });
+  const save = () =>
+    upsert.mutate(o, {
+      onSuccess: () => clearOrcamentoDraft(o.id),
+    });
+  const saveAndExit = () =>
+    upsert.mutate(o, {
+      onSuccess: () => {
+        clearOrcamentoDraft(o.id);
+        navigate({ to: "/orcamentos" });
+      },
+    });
 
   return (
     <div className="space-y-5">
@@ -106,7 +137,9 @@ function OrcamentoDetail() {
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/orcamentos" })}><ArrowLeft className="h-4 w-4" /></Button>
           <div>
-            <div className="text-xs text-muted-foreground font-mono">{o.numero}</div>
+            <div className="text-xs text-muted-foreground font-mono">
+              {labelDocumento(o.status)} · {o.numero}
+            </div>
             <h1 className="text-2xl font-semibold">{o.nome_projeto || "Sem nome"}</h1>
           </div>
         </div>
@@ -120,7 +153,13 @@ function OrcamentoDetail() {
             }}
           >
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-            <SelectContent>{STATUS_ORDER.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
+            <SelectContent>
+              {STATUS_ORDER.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           <Button variant="outline" onClick={() => { save(); setPreview(true); }}><Eye className="h-4 w-4 mr-1" /> Visualizar PDF</Button>
           <ClientOnlyPDF kind="download" orcamento={o} empresa={empresa} cliente={clientes.find((c) => c.id === o.cliente_id)} />
@@ -169,7 +208,26 @@ function OrcamentoDetail() {
           <CardHeader><CardTitle className="text-base">Totais</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatBRL(subtotal)}</span></div>
-            <div className="flex items-center gap-2"><Label className="w-24">Desconto</Label><Input type="number" step="0.01" value={o.desconto} onChange={(e) => setO({ ...o, desconto: parseFloat(e.target.value) || 0 })} /></div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label className="w-24 shrink-0">Desconto</Label>
+                <Input
+                  inputMode="numeric"
+                  placeholder="0%"
+                  className="font-mono"
+                  value={formatPercentInput(o.desconto_percentual)}
+                  onChange={(e) => {
+                    const masked = maskPercent(e.target.value);
+                    setO({ ...o, desconto_percentual: parsePercent(masked) });
+                  }}
+                />
+              </div>
+              {o.desconto_percentual > 0 && (
+                <p className="text-xs text-muted-foreground text-right">
+                  {formatPercentLabel(o.desconto_percentual)} do subtotal = − {formatBRL(descontoValor)}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-2"><Label className="w-24">Acréscimo</Label><Input type="number" step="0.01" value={o.acrescimo} onChange={(e) => setO({ ...o, acrescimo: parseFloat(e.target.value) || 0 })} /></div>
             <div className="border-t pt-3 flex justify-between text-lg font-semibold"><span>Total</span><span>{formatBRL(total)}</span></div>
           </CardContent>

@@ -4,57 +4,111 @@ Sistema interno para gerenciar **orçamentos, pedidos, clientes, serviços e fin
 
 ## Stack
 
-- TanStack Start + React + TypeScript + Vite
-- Tailwind CSS v4 + shadcn/ui
-- Zustand (estado global) com persistência em `localStorage`
-- @dnd-kit (Kanban arrastável)
-- @react-pdf/renderer (geração de PDF do orçamento)
+| Camada | Tecnologia |
+|--------|------------|
+| Framework | TanStack Start + React 19 + TypeScript |
+| Build | Vite 7 |
+| UI | Tailwind CSS v4 + shadcn/ui |
+| Dados | Supabase (PostgreSQL) + TanStack Query |
+| Kanban | @dnd-kit |
+| PDF | @react-pdf/renderer |
+| Deploy alvo | GitHub → **EasyPanel** (SSR via Cloudflare Workers runtime no build) |
 
-> **Sem login.** Sistema de uso pessoal. Toda a persistência inicial é no navegador (`localStorage`), com camada preparada para migração para Supabase.
+> **Sem login.** Uso pessoal. RLS do Supabase liberada para `anon` — veja [supabase.md](./supabase.md#segurança).
 
-## Como rodar
+## Variáveis de ambiente
 
-O ambiente já está configurado pelo Lovable. Em desenvolvimento local:
+**Nada de URL ou chave do Supabase fica fixo no código.** Use o arquivo `.env` local ou o painel do EasyPanel.
+
+| Variável | Obrigatória | Descrição |
+|----------|-------------|-----------|
+| `VITE_SUPABASE_URL` | Sim | URL do projeto (Supabase → Settings → API) |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Sim | Chave **publishable** (pública, segura no front) |
+
+Copie `.env.example` → `.env` e preencha antes de `npm run dev` ou `npm run build`.
+
+> **Importante (Vite):** variáveis `VITE_*` são embutidas no bundle no momento do **build**. No EasyPanel, configure-as **antes** do comando de build, não só no container em execução.
+
+## Como rodar localmente
 
 ```bash
-bun install
-bun run dev
+cp .env.example .env
+# edite .env com suas credenciais Supabase
+
+npm install
+npm run dev
 ```
 
-## Estrutura
+Banco de dados (primeira vez): [supabase.md](./supabase.md).
+
+## Scripts
+
+| Comando | Uso |
+|---------|-----|
+| `npm run dev` | Desenvolvimento |
+| `npm run build` | Build de produção |
+| `npm run preview` | Preview local pós-build |
+| `npm run lint` | ESLint + Prettier |
+
+## Estrutura do projeto
 
 ```
 src/
-  routes/
-    __root.tsx              # shell + providers
-    index.tsx               # /  Dashboard
-    kanban.tsx              # /kanban
-    clientes.tsx            # /clientes
-    servicos.tsx            # /servicos
-    orcamentos.index.tsx    # /orcamentos
-    orcamentos.$id.tsx      # /orcamentos/:id  (edição + PDF)
-    financeiro.tsx          # /financeiro
-    empresa.tsx             # /empresa
+  routes/                 # páginas (file-based routing)
+    index.tsx             # Dashboard
+    kanban.tsx
+    clientes.tsx
+    servicos.tsx
+    orcamentos.index.tsx
+    orcamentos.$id.tsx    # edição + PDF
+    financeiro.tsx
+    empresa.tsx
   components/
-    app-shell.tsx           # sidebar + topbar
-    pdf-preview.tsx         # documento PDF + preview/download
-    ui/                     # shadcn/ui
+    app-shell.tsx         # layout (sidebar, logo, favicon)
+    pdf-preview.tsx
+    crud-dialog.tsx
+    ui/                   # shadcn
+  integrations/supabase/
+    client.ts             # client Supabase (lê VITE_*)
   lib/
-    types.ts                # tipos + helpers (formatBRL, calcTotal)
-    seed.ts                 # dados mockados iniciais
-    store.ts                # zustand store (camada repositório)
+    types.ts              # tipos + calcTotal, formatBRL, etc.
+    repository.ts         # acesso Supabase
+    store.ts              # hooks TanStack Query
+    validators.ts         # máscaras CPF, telefone, %, CEP
+    viacep.ts
+    orcamento-draft.ts    # rascunho em sessionStorage
+  hooks/
+    use-empresa-branding.ts
 docs/
-  README.md
-  modulos.md
-  banco-de-dados.md
+  README.md               # este arquivo
+  deploy.md               # GitHub + EasyPanel
   supabase.md
-  pdf.md
+  banco-de-dados.md
+  modulos.md
+  migrations/             # SQL incremental
+public/
+  favicon.svg
 ```
 
-## Próximos passos sugeridos
+## Funcionalidades principais
 
-1. Substituir logo padrão pela sua em **Empresa**.
-2. Cadastrar seus clientes reais (ou importar via JSON manualmente).
-3. Ajustar serviços e valores em **Serviços**.
-4. Criar seu primeiro orçamento e gerar o PDF.
-5. Quando estiver pronto para nuvem: ativar **Lovable Cloud (Supabase)** e seguir `docs/supabase.md`.
+- **Empresa:** cadastro único, logo (sidebar + favicon), condições padrão
+- **Orçamentos / pedidos:** itens, desconto em **%**, PDF com percentual e valor em R$
+- **Kanban:** arrastar status; aprovação gera lançamento no financeiro
+- **Financeiro:** automático a partir dos pedidos (sem lançamento manual)
+- **Clientes / serviços:** CRUD com validações e ViaCEP
+
+Detalhes por módulo: [modulos.md](./modulos.md).
+
+## Deploy
+
+Fluxo recomendado: repositório no **GitHub** → app no **EasyPanel**.
+
+Guia passo a passo: **[deploy.md](./deploy.md)**.
+
+## Documentos relacionados
+
+- [supabase.md](./supabase.md) — schema, RLS, migrações
+- [banco-de-dados.md](./banco-de-dados.md) — tabelas e campos
+- [modulos.md](./modulos.md) — regras de negócio por tela
+- [pdf.md](./pdf.md) — layout do PDF (se existir)
