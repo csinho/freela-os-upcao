@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { ListCard } from "@/components/list-card";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({ meta: [{ title: "Clientes — Freela OS" }] }),
@@ -52,6 +53,7 @@ function ClientesPage() {
   const remove = useRemoveCliente();
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Cliente | null>(null);
+  const [toDelete, setToDelete] = useState<Cliente | null>(null);
 
   const filtered = clientes.filter((c) => c.nome.toLowerCase().includes(q.toLowerCase()));
 
@@ -97,7 +99,7 @@ function ClientesPage() {
                   type="button"
                   size="icon"
                   variant="ghost"
-                  onClick={() => confirm("Remover cliente?") && remove.mutate(c.id)}
+                  onClick={() => setToDelete(c)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -138,7 +140,7 @@ function ClientesPage() {
                     type="button"
                     size="icon"
                     variant="ghost"
-                    onClick={() => confirm("Remover cliente?") && remove.mutate(c.id)}
+                    onClick={() => setToDelete(c)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -155,6 +157,22 @@ function ClientesPage() {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="Excluir cliente?"
+        description={
+          toDelete
+            ? `O cliente "${toDelete.nome}" será removido permanentemente. Orçamentos vinculados podem ficar sem cliente.`
+            : ""
+        }
+        confirmLabel="Excluir"
+        variant="destructive"
+        onConfirm={() => {
+          if (toDelete) remove.mutate(toDelete.id);
+        }}
+      />
 
       <CrudDialog
         open={!!editing}

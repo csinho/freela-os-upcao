@@ -81,6 +81,7 @@ function OrcamentoDetail() {
   const [o, setO] = useState<Orcamento | null>(null);
   const [preview, setPreview] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<number | null>(null);
 
   useEffect(() => {
     if (original) {
@@ -467,7 +468,7 @@ function OrcamentoDetail() {
                       size="icon"
                       variant="ghost"
                       title="Remover item"
-                      onClick={() => removeItem(i)}
+                      onClick={() => setItemToRemove(i)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -537,6 +538,22 @@ function OrcamentoDetail() {
           </Button>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={itemToRemove !== null}
+        onOpenChange={(open) => !open && setItemToRemove(null)}
+        title="Remover item?"
+        description={
+          itemToRemove !== null && o.itens[itemToRemove]
+            ? `O item "${o.itens[itemToRemove].nome || "sem nome"}" será removido da lista. Salve o orçamento para persistir.`
+            : ""
+        }
+        confirmLabel="Remover"
+        variant="destructive"
+        onConfirm={() => {
+          if (itemToRemove !== null) removeItem(itemToRemove);
+        }}
+      />
 
       <ConfirmDialog
         open={deleteOpen}
