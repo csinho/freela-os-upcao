@@ -197,8 +197,42 @@ export function formatBRL(n: number): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** Extrai YYYY-MM-DD do início de uma ISO (ignora deslocamento de fuso). */
+export function calendarPartsFromIso(iso?: string): { y: number; m: number; d: number } | null {
+  if (!iso) return null;
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  return { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) };
+}
+
+/** Valor do `<input type="date">` → ISO (meio-dia local, evita voltar um dia no PDF). */
+export function dateInputToIso(dateStr: string): string {
+  const parts = calendarPartsFromIso(dateStr);
+  if (!parts) return dateStr;
+  const { y, m, d } = parts;
+  return new Date(y, m - 1, d, 12, 0, 0, 0).toISOString();
+}
+
+/** ISO do banco → valor do `<input type="date">`. */
+export function isoToDateInput(iso?: string): string {
+  const parts = calendarPartsFromIso(iso);
+  if (!parts) return "";
+  const { y, m, d } = parts;
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** Datas “só dia” (validade, prazo) — sem perder um dia por UTC. */
+export function formatCalendarDate(iso?: string): string {
+  const parts = calendarPartsFromIso(iso);
+  if (!parts) return "—";
+  const { y, m, d } = parts;
+  return new Date(y, m - 1, d).toLocaleDateString("pt-BR");
+}
+
+/** Data/hora de evento (emissão, histórico) no fuso local. */
 export function formatDate(iso?: string): string {
   if (!iso) return "—";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("pt-BR");
 }

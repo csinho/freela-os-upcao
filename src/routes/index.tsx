@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useOrcamentos, useFinanceiro } from "@/lib/store";
-import { calcTotal, formatBRL, formatDate, labelDocumento, STATUS_LABEL } from "@/lib/types";
+import { calcTotal, formatBRL, formatCalendarDate, formatDate, labelDocumento, STATUS_LABEL } from "@/lib/types";
 import type { StatusOrcamento } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,7 @@ function Dashboard() {
               <div key={f.id} className="flex items-center justify-between rounded-md border p-3">
                 <div>
                   <div className="font-medium text-sm">{f.descricao}</div>
-                  <div className="text-xs text-muted-foreground">{formatDate(f.vencimento)} · {f.tipo === "receber" ? "Receber" : "Pagar"}</div>
+                  <div className="text-xs text-muted-foreground">{formatCalendarDate(f.vencimento)} · {f.tipo === "receber" ? "Receber" : "Pagar"}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium">{formatBRL(f.valor)}</div>

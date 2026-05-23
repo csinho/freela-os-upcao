@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useFinanceiro, useClientes, useOrcamentos } from "@/lib/store";
 import type { TipoFinanceiro } from "@/lib/types";
-import { formatBRL, formatDate } from "@/lib/types";
+import { formatBRL, formatCalendarDate } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -97,7 +97,7 @@ function FinanceiroPage() {
                   </TableCell>
                   <TableCell>{f.descricao}</TableCell>
                   <TableCell>{cli?.nome ?? "—"}</TableCell>
-                  <TableCell>{formatDate(f.vencimento)}</TableCell>
+                  <TableCell>{formatCalendarDate(f.vencimento)}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariant[f.status]}>{f.status}</Badge>
                   </TableCell>

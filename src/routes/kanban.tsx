@@ -14,7 +14,16 @@ import { useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { useOrcamentos, useClientes, useFinanceiro, useMoveOrcamento } from "@/lib/store";
 import type { Cliente, Orcamento } from "@/lib/types";
-import { calcTotal, formatBRL, formatDate, STATUS_LABEL, STATUS_ORDER, StatusOrcamento } from "@/lib/types";
+import {
+  calcTotal,
+  calendarPartsFromIso,
+  formatBRL,
+  formatCalendarDate,
+  formatDate,
+  STATUS_LABEL,
+  STATUS_ORDER,
+  StatusOrcamento,
+} from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,6 +54,11 @@ const emptyDates = (): DateFilters => ({
 });
 
 function dayStart(iso: string): number {
+  const parts = calendarPartsFromIso(iso);
+  if (parts) {
+    const { y, m, d } = parts;
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+  }
   const d = new Date(iso);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
@@ -142,8 +156,8 @@ function KanbanPage() {
         </div>
         <div className="text-[11px] text-muted-foreground mt-1 space-y-0.5">
           <div>Emissão: {formatDate(o.data_criacao)}</div>
-          {o.validade && <div>Validade: {formatDate(o.validade)}</div>}
-          {o.prazo_entrega && <div>Prazo: {formatDate(o.prazo_entrega)}</div>}
+          {o.validade && <div>Validade: {formatCalendarDate(o.validade)}</div>}
+          {o.prazo_entrega && <div>Prazo: {formatCalendarDate(o.prazo_entrega)}</div>}
         </div>
       </Card>
     );

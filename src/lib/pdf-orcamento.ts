@@ -16,6 +16,7 @@ import {
   calcSubtotal,
   calcTotal,
   formatBRL,
+  formatCalendarDate,
   formatDate,
   formatPercentLabel,
   labelDocumento,
@@ -175,10 +176,10 @@ export function buildOrcamentoPdfDoc(
               { text: orcamento.numero, style: "docNumber" },
               { text: `Emissão: ${formatDate(orcamento.data_criacao)}`, style: "small" },
               ...(orcamento.validade
-                ? [{ text: `Validade: ${formatDate(orcamento.validade)}`, style: "small" }]
+                ? [{ text: `Validade: ${formatCalendarDate(orcamento.validade)}`, style: "small" }]
                 : []),
               ...(orcamento.prazo_entrega
-                ? [{ text: `Prazo: ${formatDate(orcamento.prazo_entrega)}`, style: "small" }]
+                ? [{ text: `Prazo: ${formatCalendarDate(orcamento.prazo_entrega)}`, style: "small" }]
                 : []),
             ],
           },

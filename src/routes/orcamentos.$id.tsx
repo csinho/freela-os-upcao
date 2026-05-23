@@ -18,6 +18,8 @@ import {
   calcTotal,
   formatBRL,
   formatPercentLabel,
+  dateInputToIso,
+  isoToDateInput,
   labelDocumento,
   STATUS_LABEL,
   STATUS_ORDER,
@@ -199,8 +201,8 @@ function OrcamentoDetail() {
               <Textarea rows={3} value={o.descricao || ""} onChange={(e) => setO({ ...o, descricao: e.target.value })} />
             </div>
             <div><Label>Forma de pagamento</Label><Input value={o.forma_pagamento || ""} onChange={(e) => setO({ ...o, forma_pagamento: e.target.value })} /></div>
-            <div><Label>Prazo de entrega</Label><Input type="date" value={o.prazo_entrega?.slice(0, 10) || ""} onChange={(e) => setO({ ...o, prazo_entrega: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /></div>
-            <div><Label>Validade da proposta</Label><Input type="date" value={o.validade?.slice(0, 10) || ""} onChange={(e) => setO({ ...o, validade: e.target.value ? new Date(e.target.value).toISOString() : undefined })} /></div>
+            <div><Label>Prazo de entrega</Label><Input type="date" value={isoToDateInput(o.prazo_entrega)} onChange={(e) => setO({ ...o, prazo_entrega: e.target.value ? dateInputToIso(e.target.value) : undefined })} /></div>
+            <div><Label>Validade da proposta</Label><Input type="date" value={isoToDateInput(o.validade)} onChange={(e) => setO({ ...o, validade: e.target.value ? dateInputToIso(e.target.value) : undefined })} /></div>
           </CardContent>
         </Card>
 
