@@ -18,8 +18,18 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function brandedErrorResponse(): Response {
-  return new Response(renderErrorPage(), {
+function resolveErrorMessage(err: unknown): string | undefined {
+  if (!err) return undefined;
+  if (err instanceof Error) {
+    if (err.cause instanceof Error && err.cause.message) return err.cause.message;
+    return err.message;
+  }
+  return String(err);
+}
+
+function brandedErrorResponse(captured?: unknown): Response {
+  const detail = resolveErrorMessage(captured);
+  return new Response(renderErrorPage(detail), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
@@ -62,8 +72,9 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return brandedErrorResponse();
+  const captured = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
+  console.error(captured);
+  return brandedErrorResponse(captured);
 }
 
 export default {
@@ -74,7 +85,7 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      return brandedErrorResponse();
+      return brandedErrorResponse(error);
     }
   },
 };

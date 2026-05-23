@@ -1,38 +1,30 @@
 # Geração de PDF
 
-Implementada em `src/components/pdf-preview.tsx` usando `@react-pdf/renderer`.
+Implementada com **[pdfmake](https://pdfmake.github.io/docs/0.3/)** (client-side, JavaScript puro).
 
-## Componentes exportados
+## Arquivos
 
-- `OrcamentoDoc` — componente `<Document>` do orçamento (estrutura completa).
-- `PDFPreview` — envolve `OrcamentoDoc` em `<PDFViewer>` (iframe inline).
-- `DownloadBtn` — botão com `<PDFDownloadLink>` que baixa `ORC-….pdf`.
+| Arquivo | Função |
+|---------|--------|
+| `src/lib/pdf-orcamento.ts` | Monta o `docDefinition` (layout, tabelas, totais) |
+| `src/lib/pdfmake-client.ts` | Carrega pdfmake + fontes VFS, gera blob/download |
+| `src/components/pdf-preview.tsx` | `PDFPreview` (iframe) e `DownloadBtn` |
 
-Esses componentes só rodam no **navegador** (PDFViewer usa APIs do DOM). Em `orcamentos.$id.tsx` eles são importados via `import()` dentro de `useEffect`, evitando erro de SSR.
+Em `orcamentos.$id.tsx` o módulo é importado com `import()` dinâmico — só roda no navegador.
 
 ## Layout do PDF
 
-Inspirado no modelo enviado pelo usuário (`PED-20260517-00022.pdf`):
+1. **Cabeçalho** — logo + empresa; bloco ORÇAMENTO/PEDIDO, número, datas
+2. **Cliente + Projeto** — dois cards
+3. **Tabela de itens** — #, serviço, un., qtd, valor, subtotal
+4. **Totais** — subtotal, desconto (% e R$), acréscimo, total
+5. **Condições + Observações**
+6. **Rodapé** — linhas de aceite/assinatura + texto da empresa
 
-1. **Cabeçalho** — logo + dados da empresa à esquerda; bloco "ORÇAMENTO Nº", data, validade, prazo à direita. Linha preta inferior.
-2. **Cliente + Projeto** — dois cards lado a lado.
-3. **Tabela de itens** — colunas: #, Serviço/Descrição, Un., Qtd, Valor un., Subtotal. Cabeçalho com fundo preto.
-4. **Totais** — caixa à direita: Subtotal, Desconto, Acréscimo, **Total** destacado.
-5. **Condições + Observações** — dois cards. Inclui dados bancários da empresa.
-6. **Aceite** — linha dupla para data e assinatura do cliente.
-7. **Rodapé** — empresa + número + data.
+## Customizar
 
-## Como customizar
+Edite `buildOrcamentoPdfDoc()` em `src/lib/pdf-orcamento.ts`. Referência da API: [Document definition](https://pdfmake.github.io/docs/0.3/document-definition-object/).
 
-Tudo está em `pdf-preview.tsx`. As cores, espaçamentos e larguras de coluna estão no objeto `s` (StyleSheet). Para adicionar/remover seção, edite o JSX dentro do `<Page>`.
+## Playground
 
-### Trocar fonte
-
-`@react-pdf` aceita registro de fontes via `Font.register(...)`. Por padrão usamos Helvetica (built-in).
-
-## Dados usados
-
-A função recebe `{ orcamento, empresa, cliente }`. Tudo vem do store:
-- `empresa` — dados da sua empresa (módulo Empresa).
-- `cliente` — `clientes.find(c => c.id === orcamento.cliente_id)`.
-- `orcamento` — o registro atual (com `itens`, totais, condições etc.).
+Para testar blocos isolados: [pdfmake playground](https://pdfmake.org/playground.html).

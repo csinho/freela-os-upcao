@@ -11,7 +11,7 @@ Sistema interno para gerenciar **orçamentos, pedidos, clientes, serviços e fin
 | UI | Tailwind CSS v4 + shadcn/ui |
 | Dados | Supabase (PostgreSQL) + TanStack Query |
 | Kanban | @dnd-kit |
-| PDF | @react-pdf/renderer |
+| PDF | [pdfmake](https://pdfmake.github.io/docs/0.3/) (client-side) |
 | Deploy alvo | GitHub → **EasyPanel** (SSR via Cloudflare Workers runtime no build) |
 
 > **Sem login.** Uso pessoal. RLS do Supabase liberada para `anon` — veja [supabase.md](./supabase.md#segurança).
