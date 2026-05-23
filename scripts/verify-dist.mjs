@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { assertWorkerEntryAsset, sanitizeWranglerJson } from "./sanitize-wrangler-json.mjs";
 
 const required = [
   "dist/server/index.js",
@@ -26,25 +27,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-// Garante index.js se só existir worker-entry (hash muda a cada build)
-const serverDir = "dist/server";
-const indexPath = path.join(serverDir, "index.js");
-if (!fs.existsSync(indexPath)) {
-  const assets = path.join(serverDir, "assets");
-  const entry = fs
-    .readdirSync(assets)
-    .find((f) => f.startsWith("worker-entry-") && f.endsWith(".js"));
-  if (entry) {
-    fs.writeFileSync(
-      indexPath,
-      `import { w } from "./assets/${entry}";\nexport { w as default };\n`,
-    );
-    console.log("Gerado dist/server/index.js a partir de", entry);
-  }
-}
+sanitizeWranglerJson();
+assertWorkerEntryAsset();
 
-fs.copyFileSync(
-  "deploy/wrangler.server.json",
-  path.join(serverDir, "wrangler.json"),
-);
-console.log("Build OK: dist/server + dist/client");
+console.log("Build OK: dist/server + dist/client + wrangler.json");

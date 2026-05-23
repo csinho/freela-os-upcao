@@ -6,5 +6,11 @@
   "assets": {
     "directory": "../client"
   },
-  "no_bundle": true
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["**/*.js", "**/*.mjs"]
+    }
+  ]
 }

@@ -46,7 +46,8 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
     test -f dist/server/wrangler.json && \
     test -f dist/server/index.js && \
-    test -d dist/client
+    test -d dist/client && \
+    test -d dist/server/assets
 
 EXPOSE 3000
 

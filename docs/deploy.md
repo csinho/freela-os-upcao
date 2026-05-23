@@ -111,6 +111,11 @@ No EasyPanel, associe domínio e ative TLS. Teste as rotas: `/`, `/orcamentos`, 
 - Solução: use o `Dockerfile` atualizado (`node:22-bookworm-slim` + `NODE_OPTIONS=--max-old-space-size=4096`), faça push e **Rebuild**.
 - Se persistir, aumente memória do serviço no EasyPanel (≥ 2 GB para o build).
 
+### `No such module "assets/worker-entry-….js"`
+
+- O `wrangler.json` de produção estava sem regras `ESModule` (o script antigo substituía o arquivo gerado pelo Vite).
+- Solução: push com `scripts/sanitize-wrangler-json.mjs` + **Rebuild** sem cache.
+
 ### `Could not read file: dist/server/wrangler.json`
 
 - O build do Docker não gerou/copiou `dist/` (falha no `npm run build` ou variáveis `VITE_*` ausentes no build).

@@ -4,20 +4,28 @@ set -e
 PORT="${PORT:-3000}"
 
 if [ ! -f dist/server/index.js ]; then
-  echo "ERRO: dist/server/index.js não encontrado. O estágio de build do Docker falhou ou dist não foi copiado."
-  echo "Confira no EasyPanel: variáveis VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY no build."
+  echo "ERRO: dist/server/index.js não encontrado."
   exit 1
 fi
 
 if [ ! -f dist/server/wrangler.json ]; then
-  echo "Aviso: wrangler.json ausente; usando deploy/wrangler.server.json"
-  cp deploy/wrangler.server.json dist/server/wrangler.json 2>/dev/null || \
-    cp /app/deploy/wrangler.server.json dist/server/wrangler.json
+  echo "ERRO: dist/server/wrangler.json ausente."
+  exit 1
+fi
+
+ENTRY=$(grep -oE 'worker-entry-[^"]+\.js' dist/server/index.js | head -1)
+if [ -n "$ENTRY" ] && [ ! -f "dist/server/assets/$ENTRY" ]; then
+  echo "ERRO: index.js referencia assets/$ENTRY mas o arquivo não existe."
+  echo "Arquivos em dist/server/assets:"
+  ls -la dist/server/assets/ | head -20
+  exit 1
 fi
 
 cd dist/server
 
-exec npx wrangler dev \
+echo "Iniciando Freela OS na porta $PORT (worker: ${ENTRY:-index.js})..."
+
+exec npx wrangler dev index.js \
   --config wrangler.json \
   --ip 0.0.0.0 \
   --port "$PORT" \
