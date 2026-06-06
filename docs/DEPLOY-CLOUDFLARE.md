@@ -58,6 +58,16 @@ Opcional: `WOOVI_WEBHOOK_AUTHORIZATION` — só se configurar header no painel W
 
 **Remova** o secret `EVOLUTION_MOCK` do GitHub/Cloudflare se existir — o sistema não usa mais modo mock.
 
+### Recuperação: Evolution apagada e sem login admin
+
+Se a instância WhatsApp foi apagada, o OTP não chega e o painel `/admin` fica inacessível. Use o setup público:
+
+```
+https://upservicos.com/setup/whatsapp
+```
+
+Informe a chave **`BILLING_CRON_SECRET`** (mesma do GitHub Secrets), crie a instância, escaneie o QR e depois faça login em `/login`.
+
 **Variável pública** (não é secret): `PUBLIC_APP_URL` está em `wrangler.jsonc` → `vars.PUBLIC_APP_URL` (`https://upservicos.com`). Altere lá se o domínio mudar.
 
 ## 3. GitHub — Actions

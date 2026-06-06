@@ -118,7 +118,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-const PUBLIC_PATHS = ["/login", "/cadastro/empresa"];
+const PUBLIC_PATHS = ["/login", "/cadastro/empresa", "/setup/whatsapp"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

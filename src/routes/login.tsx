@@ -124,6 +124,12 @@ function LoginPage() {
                   Criar conta
                 </Link>
               </p>
+              <p className="text-center text-xs text-muted-foreground">
+                Admin sem OTP?{" "}
+                <Link to="/setup/whatsapp" className="text-primary underline-offset-4 hover:underline">
+                  Configurar WhatsApp
+                </Link>
+              </p>
             </>
           ) : (
             <>

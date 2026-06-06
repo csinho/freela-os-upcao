@@ -20,6 +20,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrcamentosIndexRouteImport } from './routes/orcamentos.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as SetupWhatsappRouteImport } from './routes/setup.whatsapp'
 import { Route as OrcamentosIdRouteImport } from './routes/orcamentos.$id'
 import { Route as CadastroEmpresaRouteImport } from './routes/cadastro.empresa'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -85,6 +86,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const SetupWhatsappRoute = SetupWhatsappRouteImport.update({
+  id: '/setup/whatsapp',
+  path: '/setup/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrcamentosIdRoute = OrcamentosIdRouteImport.update({
   id: '/orcamentos/$id',
   path: '/orcamentos/$id',
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
+  '/setup/whatsapp': typeof SetupWhatsappRoute
   '/admin/': typeof AdminIndexRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
   '/admin/empresas/$empresaId': typeof AdminEmpresasEmpresaIdRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
+  '/setup/whatsapp': typeof SetupWhatsappRoute
   '/admin': typeof AdminIndexRoute
   '/orcamentos': typeof OrcamentosIndexRoute
   '/admin/empresas/$empresaId': typeof AdminEmpresasEmpresaIdRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
+  '/setup/whatsapp': typeof SetupWhatsappRoute
   '/admin/': typeof AdminIndexRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
   '/admin/empresas/$empresaId': typeof AdminEmpresasEmpresaIdRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/cadastro/empresa'
     | '/orcamentos/$id'
+    | '/setup/whatsapp'
     | '/admin/'
     | '/orcamentos/'
     | '/admin/empresas/$empresaId'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/cadastro/empresa'
     | '/orcamentos/$id'
+    | '/setup/whatsapp'
     | '/admin'
     | '/orcamentos'
     | '/admin/empresas/$empresaId'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/cadastro/empresa'
     | '/orcamentos/$id'
+    | '/setup/whatsapp'
     | '/admin/'
     | '/orcamentos/'
     | '/admin/empresas/$empresaId'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   ServicosRoute: typeof ServicosRoute
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   OrcamentosIdRoute: typeof OrcamentosIdRoute
+  SetupWhatsappRoute: typeof SetupWhatsappRoute
   OrcamentosIndexRoute: typeof OrcamentosIndexRoute
   ApiCronBillingRoute: typeof ApiCronBillingRoute
   ApiWebhooksWooviRoute: typeof ApiWebhooksWooviRoute
@@ -360,6 +373,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/setup/whatsapp': {
+      id: '/setup/whatsapp'
+      path: '/setup/whatsapp'
+      fullPath: '/setup/whatsapp'
+      preLoaderRoute: typeof SetupWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/orcamentos/$id': {
       id: '/orcamentos/$id'
@@ -459,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicosRoute: ServicosRoute,
   CadastroEmpresaRoute: CadastroEmpresaRoute,
   OrcamentosIdRoute: OrcamentosIdRoute,
+  SetupWhatsappRoute: SetupWhatsappRoute,
   OrcamentosIndexRoute: OrcamentosIndexRoute,
   ApiCronBillingRoute: ApiCronBillingRoute,
   ApiWebhooksWooviRoute: ApiWebhooksWooviRoute,
