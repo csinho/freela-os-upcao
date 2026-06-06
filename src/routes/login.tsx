@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/auth/PhoneField";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import {
   confirmLoginOtpRemote,
   requestLoginOtpRemote,
@@ -20,8 +21,20 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 
+function redirectIfLoggedIn(): void {
+  if (typeof window === "undefined") return;
+  const sessao = getClientSessao();
+  if (isAdminSessao(sessao)) {
+    throw redirect({ to: "/admin/dashboard", replace: true });
+  }
+  if (isEmpresaSessao(sessao)) {
+    throw redirect({ to: "/", replace: true });
+  }
+}
+
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: pageTitle("Login") }] }),
+  beforeLoad: redirectIfLoggedIn,
   component: LoginPage,
 });
 
@@ -32,6 +45,11 @@ function LoginPage() {
   const [step, setStep] = useState<"whatsapp" | "otp">("whatsapp");
   const [role, setRole] = useState<LoginRole | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const sessao = getClientSessao();
+    return !isAdminSessao(sessao) && !isEmpresaSessao(sessao);
+  });
   const otpRef = useRef<React.ComponentRef<typeof InputOTP>>(null);
 
   const focusOtp = () => {
@@ -48,13 +66,23 @@ function LoginPage() {
   useEffect(() => {
     const sessao = getClientSessao();
     if (isAdminSessao(sessao)) {
-      void navigate({ to: "/admin/dashboard" });
+      void navigate({ to: "/admin/dashboard", replace: true });
       return;
     }
     if (isEmpresaSessao(sessao)) {
-      void navigate({ to: "/" });
+      void navigate({ to: "/", replace: true });
+      return;
     }
+    setSessionChecked(true);
   }, [navigate]);
+
+  if (!sessionChecked) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center text-sm text-muted-foreground">
+        Redirecionando…
+      </div>
+    );
+  }
 
   const sendOtp = async () => {
     if (whatsapp.length < 11) {
@@ -111,7 +139,8 @@ function LoginPage() {
     role === "admin" ? "Acesso administrativo" : role === "empresa" ? "Acesso da empresa" : null;
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-background via-muted/30 to-muted/60 p-4 sm:p-6">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-gradient-to-b from-background via-muted/30 to-muted/60 p-4 sm:p-6">
+      <PwaInstallPrompt />
       <Card className="w-full max-w-md border-0 shadow-xl sm:border sm:shadow-lg rounded-2xl">
         <CardHeader className="space-y-4 pb-2">
           <AppLogo className="mx-auto" />
