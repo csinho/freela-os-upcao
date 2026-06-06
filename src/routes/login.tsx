@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/auth/PhoneField";
@@ -8,7 +8,7 @@ import {
   requestLoginOtpRemote,
   resolveLoginRoleRemote,
 } from "@/lib/api/auth.functions";
-import { applyAuthSession } from "@/lib/auth/client-auth";
+import { getPostLoginPath, loginAndRedirect } from "@/lib/auth/client-auth";
 import { getClientSessao, isAdminSessao, isEmpresaSessao } from "@/lib/auth/client-session";
 import type { LoginRole } from "@/lib/auth/types";
 import { AppLogo } from "@/components/AppLogo";
@@ -24,11 +24,9 @@ import {
 function redirectIfLoggedIn(): void {
   if (typeof window === "undefined") return;
   const sessao = getClientSessao();
-  if (isAdminSessao(sessao)) {
-    throw redirect({ to: "/admin/dashboard", replace: true });
-  }
-  if (isEmpresaSessao(sessao)) {
-    throw redirect({ to: "/", replace: true });
+  if (isAdminSessao(sessao) || isEmpresaSessao(sessao)) {
+    window.location.replace(getPostLoginPath(sessao));
+    throw redirect({ to: getPostLoginPath(sessao), replace: true });
   }
 }
 
@@ -39,7 +37,6 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const navigate = useNavigate();
   const [whatsapp, setWhatsapp] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"whatsapp" | "otp">("whatsapp");
@@ -65,16 +62,12 @@ function LoginPage() {
 
   useEffect(() => {
     const sessao = getClientSessao();
-    if (isAdminSessao(sessao)) {
-      void navigate({ to: "/admin/dashboard", replace: true });
-      return;
-    }
-    if (isEmpresaSessao(sessao)) {
-      void navigate({ to: "/", replace: true });
+    if (isAdminSessao(sessao) || isEmpresaSessao(sessao)) {
+      window.location.replace(getPostLoginPath(sessao));
       return;
     }
     setSessionChecked(true);
-  }, [navigate]);
+  }, []);
 
   if (!sessionChecked) {
     return (
@@ -120,14 +113,15 @@ function LoginPage() {
     try {
       const result = await confirmLoginOtpRemote({ data: { whatsapp, code, role } });
       if (result.sessao.tipo === "admin") {
-        await applyAuthSession(result.sessao);
         toast.success("Bem-vindo, administração.");
-        void navigate({ to: "/admin/dashboard" });
+        await loginAndRedirect(result.sessao);
         return;
       }
-      await applyAuthSession(result.sessao, "auth" in result ? result.auth : undefined);
       toast.success(`Bem-vindo, ${result.sessao.nome}!`);
-      void navigate({ to: "/" });
+      await loginAndRedirect(
+        result.sessao,
+        "auth" in result ? result.auth : undefined,
+      );
     } catch (e) {
       toast.error((e as Error).message ?? "Código inválido");
     } finally {

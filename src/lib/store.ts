@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useEmpresaDataReady } from "@/hooks/use-empresa-data-ready";
 import type {
   Cliente,
   Empresa,
@@ -33,9 +34,20 @@ const ok = (msg: string) => () => toast.success(msg);
 const fail = (msg: string) => (e: unknown) =>
   toast.error(`${msg}: ${(e as Error)?.message ?? "erro"}`);
 
+function useEmpresaQueryGate() {
+  const { ready, empresaId } = useEmpresaDataReady();
+  return { enabled: ready, empresaId };
+}
+
 // ============ Empresa ============
-export const useEmpresa = () =>
-  useQuery({ queryKey: QK.empresa, queryFn: () => empresaRepo.get() });
+export const useEmpresa = () => {
+  const { enabled, empresaId } = useEmpresaQueryGate();
+  return useQuery({
+    queryKey: empresaId ? [...QK.empresa, empresaId] : QK.empresa,
+    queryFn: () => empresaRepo.get(),
+    enabled,
+  });
+};
 
 export function useSaveEmpresa() {
   const qc = useQueryClient();
@@ -50,8 +62,14 @@ export function useSaveEmpresa() {
 }
 
 // ============ Clientes ============
-export const useClientes = () =>
-  useQuery({ queryKey: QK.clientes, queryFn: () => clientesRepo.list() });
+export const useClientes = () => {
+  const { enabled, empresaId } = useEmpresaQueryGate();
+  return useQuery({
+    queryKey: empresaId ? [...QK.clientes, empresaId] : QK.clientes,
+    queryFn: () => clientesRepo.list(),
+    enabled,
+  });
+};
 
 export function useUpsertCliente() {
   const qc = useQueryClient();
@@ -77,8 +95,14 @@ export function useRemoveCliente() {
 }
 
 // ============ Serviços ============
-export const useServicos = () =>
-  useQuery({ queryKey: QK.servicos, queryFn: () => servicosRepo.list() });
+export const useServicos = () => {
+  const { enabled, empresaId } = useEmpresaQueryGate();
+  return useQuery({
+    queryKey: empresaId ? [...QK.servicos, empresaId] : QK.servicos,
+    queryFn: () => servicosRepo.list(),
+    enabled,
+  });
+};
 
 export function useUpsertServico() {
   const qc = useQueryClient();
@@ -104,15 +128,23 @@ export function useRemoveServico() {
 }
 
 // ============ Orçamentos ============
-export const useOrcamentos = () =>
-  useQuery({ queryKey: QK.orcamentos, queryFn: () => orcamentosRepo.list() });
-
-export const useOrcamento = (id: string) =>
-  useQuery({
-    queryKey: QK.orcamento(id),
-    queryFn: () => orcamentosRepo.get(id),
-    enabled: !!id,
+export const useOrcamentos = () => {
+  const { enabled, empresaId } = useEmpresaQueryGate();
+  return useQuery({
+    queryKey: empresaId ? [...QK.orcamentos, empresaId] : QK.orcamentos,
+    queryFn: () => orcamentosRepo.list(),
+    enabled,
   });
+};
+
+export const useOrcamento = (id: string) => {
+  const { enabled, empresaId } = useEmpresaQueryGate();
+  return useQuery({
+    queryKey: empresaId ? [...QK.orcamento(id), empresaId] : QK.orcamento(id),
+    queryFn: () => orcamentosRepo.get(id),
+    enabled: enabled && !!id,
+  });
+};
 
 export function useUpsertOrcamento() {
   const qc = useQueryClient();
@@ -154,8 +186,14 @@ export function useMoveOrcamento() {
 }
 
 // ============ Financeiro ============
-export const useFinanceiro = () =>
-  useQuery({ queryKey: QK.financeiro, queryFn: () => financeiroRepo.list() });
+export const useFinanceiro = () => {
+  const { enabled, empresaId } = useEmpresaQueryGate();
+  return useQuery({
+    queryKey: empresaId ? [...QK.financeiro, empresaId] : QK.financeiro,
+    queryFn: () => financeiroRepo.list(),
+    enabled,
+  });
+};
 
 export function useUpsertFinanceiro() {
   const qc = useQueryClient();

@@ -26,10 +26,10 @@ function err<T>(data: T | null, error: { message: string } | null): T {
 }
 
 // ============ Empresa ============
-const EMPRESA_ID = "11111111-1111-1111-1111-111111111111";
-
 function requireEmpresaId(): string {
-  return getEmpresaIdFromSessao() ?? EMPRESA_ID;
+  const empresaId = getEmpresaIdFromSessao();
+  if (!empresaId) throw new Error("Sessão da empresa não encontrada.");
+  return empresaId;
 }
 
 export const empresaRepo = {
@@ -39,7 +39,7 @@ export const empresaRepo = {
     if (error) throw new Error(error.message);
     if (!data) {
       return {
-        id: EMPRESA_ID,
+        id: empresaId,
         nome: "Minha Empresa",
         endereco: {},
       };
