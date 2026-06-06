@@ -11,7 +11,10 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Search, X } from "lucide-react";
+import { billingBlocksMutation } from "@/lib/billing/state";
+import { useEmpresaBilling } from "@/lib/billing/use-empresa-billing";
 import { useOrcamentos, useClientes, useFinanceiro, useMoveOrcamento } from "@/lib/store";
 import type { Cliente, Orcamento } from "@/lib/types";
 import {
@@ -96,6 +99,7 @@ function KanbanPage() {
   const { data: clientes = [] } = useClientes();
   const { data: financeiro = [] } = useFinanceiro();
   const move = useMoveOrcamento();
+  const { billing } = useEmpresaBilling();
   const navigate = useNavigate();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -119,6 +123,10 @@ function KanbanPage() {
     setActiveId(null);
     const over = e.over?.id as StatusOrcamento | undefined;
     if (over && STATUS_ORDER.includes(over)) {
+      if (over === "em_producao" && billing && billingBlocksMutation(billing)) {
+        toast.error("Plano pendente — acesse Plano para pagar e aprovar pedidos.");
+        return;
+      }
       move.mutate({ id: String(e.active.id), status: over });
     }
   };

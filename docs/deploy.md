@@ -60,6 +60,19 @@ Cadastre **antes do primeiro deploy** (são usadas no `docker build`):
 | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_...` |
 
+**Billing Woovi (runtime — servidor, sem `VITE_`):**
+
+| Variável | Exemplo |
+|----------|---------|
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` (service role) |
+| `WOOVI_APP_ID` | AppID da API Woovi |
+| `BILLING_CRON_SECRET` | UUID para cron HTTP |
+| `PUBLIC_APP_URL` | `https://seu-dominio.com` |
+
+Opcional: `WOOVI_WEBHOOK_AUTHORIZATION` — apenas se configurar header Authorization no webhook Woovi.
+
+Detalhes: [BILLING.md](./BILLING.md).
+
 No EasyPanel, marque-as como variáveis de **build** / ambiente do serviço. O `Dockerfile` valida se existem; sem elas o build falha com mensagem clara.
 
 ### 4. O que o Dockerfile faz
@@ -86,9 +99,19 @@ npx wrangler deploy
 
 Configure secrets/vars no dashboard Cloudflare se necessário.
 
-### 6. Domínio e HTTPS
+### 6. Cron de billing (EasyPanel/Docker)
 
-No EasyPanel, associe domínio e ative TLS. Teste as rotas: `/`, `/orcamentos`, `/empresa`.
+O container não dispara cron nativo da Cloudflare. Agende um job HTTP externo (EasyPanel Cron ou serviço similar):
+
+```bash
+curl "https://SEU-DOMINIO/api/cron/billing?secret=SEU_BILLING_CRON_SECRET"
+```
+
+Horário sugerido: `0 12 * * *` UTC (09:00 BRT).
+
+### 7. Domínio e HTTPS
+
+No EasyPanel, associe domínio e ative TLS. Teste as rotas: `/`, `/orcamentos`, `/plano`, `/empresa`.
 
 ## Checklist pós-deploy
 
@@ -97,6 +120,9 @@ No EasyPanel, associe domínio e ative TLS. Teste as rotas: `/`, `/orcamentos`, 
 - [ ] Salvar empresa com logo atualiza sidebar e favicon
 - [ ] Gerar PDF de um orçamento
 - [ ] Mover card no Kanban para *Em produção* cria lançamento no financeiro
+- [ ] Página `/plano` carrega status do billing
+- [ ] Webhook Woovi de teste retorna `{ "ok": true }`
+- [ ] Cron manual `/api/cron/billing?secret=...` retorna `{ "ok": true }`
 
 ## Erros comuns
 

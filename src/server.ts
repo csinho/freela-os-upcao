@@ -1,7 +1,10 @@
 import "./lib/error-capture";
 
+import { handleApiRequest } from "./lib/api/request-handlers";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { runBillingDailyJob } from "./lib/billing/billing.server";
+import { getServerEnv } from "./lib/env.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -77,15 +80,38 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse(captured);
 }
 
+function envRecord(env: unknown): Record<string, string | undefined> | undefined {
+  if (!env || typeof env !== "object") return undefined;
+  return env as Record<string, string | undefined>;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const bindings = envRecord(env);
+      const apiResponse = await handleApiRequest(request, bindings);
+      if (apiResponse) return apiResponse;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
       return brandedErrorResponse(error);
+    }
+  },
+  async scheduled(_event: unknown, env: unknown, _ctx: unknown) {
+    const bindings = envRecord(env);
+    const secret = getServerEnv("BILLING_CRON_SECRET", bindings);
+    if (!secret) {
+      console.warn("[billing-cron] BILLING_CRON_SECRET ausente — cron ignorado.");
+      return;
+    }
+    try {
+      const result = await runBillingDailyJob(bindings);
+      console.info("[billing-cron] concluído", result);
+    } catch (error) {
+      console.error("[billing-cron] falhou", error);
     }
   },
 };

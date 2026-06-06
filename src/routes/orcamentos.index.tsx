@@ -1,4 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { billingBlocksMutation } from "@/lib/billing/state";
+import { useEmpresaBilling } from "@/lib/billing/use-empresa-billing";
 import { useOrcamentos, useClientes, useEmpresa, gerarNumeroOrcamento } from "@/lib/store";
 import type { Orcamento } from "@/lib/types";
 import { calcTotal, formatBRL, formatDate, labelDocumento, STATUS_LABEL } from "@/lib/types";
@@ -27,9 +30,14 @@ function OrcamentosList() {
   const { data: orcamentos = [], isLoading } = useOrcamentos();
   const { data: clientes = [] } = useClientes();
   const { data: empresa } = useEmpresa();
+  const { billing } = useEmpresaBilling();
   const navigate = useNavigate();
 
   const novo = () => {
+    if (billing && billingBlocksMutation(billing)) {
+      toast.error("Plano pendente — acesse Plano para pagar e criar novos orçamentos.");
+      return;
+    }
     const o: Orcamento = {
       id: newId(),
       numero: gerarNumeroOrcamento(orcamentos),

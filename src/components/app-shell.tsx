@@ -9,7 +9,9 @@ import {
   Wallet,
   Building2,
   Menu,
+  CreditCard,
 } from "lucide-react";
+import { EmpresaBillingBanner } from "@/components/empresa/EmpresaBillingBanner";
 import { cn } from "@/lib/utils";
 import { useEmpresaBranding } from "@/hooks/use-empresa-branding";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ const NAV = [
   { to: "/clientes", label: "Clientes", icon: Users, short: "Clientes" },
   { to: "/servicos", label: "Serviços", icon: Wrench, short: "Serviços" },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, short: "Financeiro" },
+  { to: "/plano", label: "Plano", icon: CreditCard, short: "Plano" },
   { to: "/empresa", label: "Empresa", icon: Building2, short: "Empresa" },
 ] as const;
 
@@ -128,6 +131,7 @@ export function AppShell() {
           <span className="md:hidden font-semibold truncate flex-1 min-w-0">{pageTitle}</span>
         </header>
         <main className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 min-w-0 min-h-0 overflow-auto">
+          <EmpresaBillingBanner />
           <Outlet />
         </main>
       </div>

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosRouteImport } from './routes/servicos'
+import { Route as PlanoRouteImport } from './routes/plano'
 import { Route as KanbanRouteImport } from './routes/kanban'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as EmpresaRouteImport } from './routes/empresa'
@@ -17,10 +18,17 @@ import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrcamentosIndexRouteImport } from './routes/orcamentos.index'
 import { Route as OrcamentosIdRouteImport } from './routes/orcamentos.$id'
+import { Route as ApiWebhooksWooviRouteImport } from './routes/api/webhooks/woovi'
+import { Route as ApiCronBillingRouteImport } from './routes/api/cron/billing'
 
 const ServicosRoute = ServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanoRoute = PlanoRouteImport.update({
+  id: '/plano',
+  path: '/plano',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KanbanRoute = KanbanRouteImport.update({
@@ -58,6 +66,16 @@ const OrcamentosIdRoute = OrcamentosIdRouteImport.update({
   path: '/orcamentos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhooksWooviRoute = ApiWebhooksWooviRouteImport.update({
+  id: '/api/webhooks/woovi',
+  path: '/api/webhooks/woovi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronBillingRoute = ApiCronBillingRouteImport.update({
+  id: '/api/cron/billing',
+  path: '/api/cron/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -65,9 +83,12 @@ export interface FileRoutesByFullPath {
   '/empresa': typeof EmpresaRoute
   '/financeiro': typeof FinanceiroRoute
   '/kanban': typeof KanbanRoute
+  '/plano': typeof PlanoRoute
   '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
+  '/api/cron/billing': typeof ApiCronBillingRoute
+  '/api/webhooks/woovi': typeof ApiWebhooksWooviRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,9 +96,12 @@ export interface FileRoutesByTo {
   '/empresa': typeof EmpresaRoute
   '/financeiro': typeof FinanceiroRoute
   '/kanban': typeof KanbanRoute
+  '/plano': typeof PlanoRoute
   '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
   '/orcamentos': typeof OrcamentosIndexRoute
+  '/api/cron/billing': typeof ApiCronBillingRoute
+  '/api/webhooks/woovi': typeof ApiWebhooksWooviRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,9 +110,12 @@ export interface FileRoutesById {
   '/empresa': typeof EmpresaRoute
   '/financeiro': typeof FinanceiroRoute
   '/kanban': typeof KanbanRoute
+  '/plano': typeof PlanoRoute
   '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
+  '/api/cron/billing': typeof ApiCronBillingRoute
+  '/api/webhooks/woovi': typeof ApiWebhooksWooviRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,9 +125,12 @@ export interface FileRouteTypes {
     | '/empresa'
     | '/financeiro'
     | '/kanban'
+    | '/plano'
     | '/servicos'
     | '/orcamentos/$id'
     | '/orcamentos/'
+    | '/api/cron/billing'
+    | '/api/webhooks/woovi'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,9 +138,12 @@ export interface FileRouteTypes {
     | '/empresa'
     | '/financeiro'
     | '/kanban'
+    | '/plano'
     | '/servicos'
     | '/orcamentos/$id'
     | '/orcamentos'
+    | '/api/cron/billing'
+    | '/api/webhooks/woovi'
   id:
     | '__root__'
     | '/'
@@ -118,9 +151,12 @@ export interface FileRouteTypes {
     | '/empresa'
     | '/financeiro'
     | '/kanban'
+    | '/plano'
     | '/servicos'
     | '/orcamentos/$id'
     | '/orcamentos/'
+    | '/api/cron/billing'
+    | '/api/webhooks/woovi'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,9 +165,12 @@ export interface RootRouteChildren {
   EmpresaRoute: typeof EmpresaRoute
   FinanceiroRoute: typeof FinanceiroRoute
   KanbanRoute: typeof KanbanRoute
+  PlanoRoute: typeof PlanoRoute
   ServicosRoute: typeof ServicosRoute
   OrcamentosIdRoute: typeof OrcamentosIdRoute
   OrcamentosIndexRoute: typeof OrcamentosIndexRoute
+  ApiCronBillingRoute: typeof ApiCronBillingRoute
+  ApiWebhooksWooviRoute: typeof ApiWebhooksWooviRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/servicos'
       fullPath: '/servicos'
       preLoaderRoute: typeof ServicosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plano': {
+      id: '/plano'
+      path: '/plano'
+      fullPath: '/plano'
+      preLoaderRoute: typeof PlanoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kanban': {
@@ -192,6 +238,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrcamentosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhooks/woovi': {
+      id: '/api/webhooks/woovi'
+      path: '/api/webhooks/woovi'
+      fullPath: '/api/webhooks/woovi'
+      preLoaderRoute: typeof ApiWebhooksWooviRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/billing': {
+      id: '/api/cron/billing'
+      path: '/api/cron/billing'
+      fullPath: '/api/cron/billing'
+      preLoaderRoute: typeof ApiCronBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -201,9 +261,12 @@ const rootRouteChildren: RootRouteChildren = {
   EmpresaRoute: EmpresaRoute,
   FinanceiroRoute: FinanceiroRoute,
   KanbanRoute: KanbanRoute,
+  PlanoRoute: PlanoRoute,
   ServicosRoute: ServicosRoute,
   OrcamentosIdRoute: OrcamentosIdRoute,
   OrcamentosIndexRoute: OrcamentosIndexRoute,
+  ApiCronBillingRoute: ApiCronBillingRoute,
+  ApiWebhooksWooviRoute: ApiWebhooksWooviRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
