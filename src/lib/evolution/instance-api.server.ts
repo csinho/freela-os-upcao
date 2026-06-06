@@ -1,5 +1,9 @@
 import { getServerEnv } from "@/lib/env.server";
-import { isEvolutionMock } from "./instance.server";
+
+export type EvolutionQrPayload = {
+  base64: string | null;
+  pairingCode: string | null;
+};
 
 function evolutionBaseUrl(env?: Record<string, string | undefined>): string | null {
   const url = getServerEnv("EVOLUTION_API_URL", env);
@@ -35,66 +39,118 @@ async function evolutionFetch<T>(
     throw new Error(`Evolution API erro ${res.status}: ${text || res.statusText}`);
   }
 
-  return (await res.json()) as T;
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
+}
+
+function parseQrResponse(data: Record<string, unknown>): EvolutionQrPayload {
+  const qrcode = data.qrcode as { base64?: string } | undefined;
+  const base64 =
+    (typeof data.base64 === "string" ? data.base64 : null) ??
+    (typeof qrcode?.base64 === "string" ? qrcode.base64 : null);
+  const pairingCode = typeof data.pairingCode === "string" ? data.pairingCode : null;
+  return { base64, pairingCode };
+}
+
+export function toEvolutionApiNumber(phone11: string): string {
+  const digits = phone11.replace(/\D/g, "");
+  if (digits.length === 11) return `55${digits}`;
+  if (digits.length === 13 && digits.startsWith("55")) return digits;
+  throw new Error("Informe o WhatsApp com 11 dígitos (DDD + número).");
+}
+
+export async function deleteEvolutionInstance(
+  instanceName: string,
+  env?: Record<string, string | undefined>,
+): Promise<void> {
+  try {
+    await evolutionFetch(
+      `/instance/delete/${encodeURIComponent(instanceName)}`,
+      { method: "DELETE" },
+      env,
+    );
+  } catch (e) {
+    const msg = (e as Error).message ?? "";
+    if (msg.includes("404") || msg.toLowerCase().includes("not found")) return;
+    throw e;
+  }
 }
 
 export async function ensureEvolutionInstance(
   instanceName: string,
   env?: Record<string, string | undefined>,
-): Promise<void> {
-  if (isEvolutionMock(env)) return;
+  opts?: { number?: string; qrcode?: boolean; recreate?: boolean },
+): Promise<EvolutionQrPayload> {
+  if (opts?.recreate) {
+    await deleteEvolutionInstance(instanceName, env);
+  }
 
   try {
-    await evolutionFetch(
+    const data = await evolutionFetch<Record<string, unknown>>(
       "/instance/create",
       {
         method: "POST",
         body: JSON.stringify({
           instanceName,
           integration: "WHATSAPP-BAILEYS",
-          qrcode: false,
+          qrcode: opts?.qrcode ?? true,
+          ...(opts?.number ? { number: opts.number } : {}),
         }),
       },
       env,
     );
+    return parseQrResponse(data);
   } catch (e) {
     const msg = (e as Error).message ?? "";
-    if (!msg.includes("already") && !msg.includes("403") && !msg.includes("409")) {
-      throw e;
+    if (
+      msg.includes("already") ||
+      msg.includes("403") ||
+      msg.includes("409") ||
+      msg.toLowerCase().includes("exists")
+    ) {
+      return fetchEvolutionConnectQr(instanceName, env, opts?.number);
     }
+    throw e;
   }
 }
 
 export async function fetchEvolutionConnectQr(
   instanceName: string,
   env?: Record<string, string | undefined>,
-): Promise<{ base64: string | null; pairingCode: string | null }> {
-  if (isEvolutionMock(env)) {
-    return { base64: null, pairingCode: "MOCK-PAIRING" };
+  number?: string,
+): Promise<EvolutionQrPayload> {
+  const query = number ? `?number=${encodeURIComponent(number)}` : "";
+  const data = await evolutionFetch<Record<string, unknown>>(
+    `/instance/connect/${encodeURIComponent(instanceName)}${query}`,
+    { method: "GET" },
+    env,
+  );
+  const parsed = parseQrResponse(data);
+  if (!parsed.base64 && !parsed.pairingCode) {
+    throw new Error(
+      "Evolution não retornou QR Code. Confirme URL/API key, crie a instância novamente ou verifique o painel Evolution.",
+    );
   }
-
-  const data = await evolutionFetch<{
-    base64?: string;
-    qrcode?: { base64?: string };
-    pairingCode?: string;
-    code?: string;
-  }>(`/instance/connect/${encodeURIComponent(instanceName)}`, { method: "GET" }, env);
-
-  const base64 = data.base64 ?? data.qrcode?.base64 ?? null;
-  const pairingCode = data.pairingCode ?? data.code ?? null;
-  return { base64, pairingCode };
+  return parsed;
 }
 
 export async function fetchEvolutionConnectionState(
   instanceName: string,
   env?: Record<string, string | undefined>,
 ): Promise<string> {
-  if (isEvolutionMock(env)) return "open";
-
   const data = await evolutionFetch<{
-    instance?: { state?: string };
+    instance?: { state?: string; status?: string };
     state?: string;
+    status?: string;
   }>(`/instance/connectionState/${encodeURIComponent(instanceName)}`, { method: "GET" }, env);
 
-  return data.instance?.state ?? data.state ?? "unknown";
+  return (
+    data.instance?.state ??
+    data.instance?.status ??
+    data.state ??
+    data.status ??
+    "unknown"
+  );
 }

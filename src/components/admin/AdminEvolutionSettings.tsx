@@ -6,20 +6,37 @@ import {
   saveEvolutionInstanceAdminRemote,
 } from "@/lib/api/admin.functions";
 import type { AdminSettings } from "@/lib/admin/types";
+import { PhoneField } from "@/components/auth/PhoneField";
 import { getClientSessao } from "@/lib/auth/client-session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Props = {
   settings: AdminSettings | null;
   onUpdated: () => void;
 };
 
+function applyQrResult(
+  result: { base64: string | null; pairingCode: string | null; connectionState: string },
+  setters: {
+    setQrBase64: (v: string | null) => void;
+    setPairingCode: (v: string | null) => void;
+    setConnectionState: (v: string) => void;
+  },
+) {
+  setters.setQrBase64(result.base64);
+  setters.setPairingCode(result.pairingCode);
+  setters.setConnectionState(result.connectionState);
+}
+
 export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
   const [instanceName, setInstanceName] = useState("");
+  const [connectionPhone, setConnectionPhone] = useState("");
+  const [recreate, setRecreate] = useState(false);
   const [connectionState, setConnectionState] = useState("unknown");
   const [qrBase64, setQrBase64] = useState<string | null>(null);
   const [pairingCode, setPairingCode] = useState<string | null>(null);
@@ -28,23 +45,39 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
   useEffect(() => {
     if (settings) {
       setInstanceName(settings.evolutionInstanceName);
+      setConnectionPhone(settings.evolutionConnectionPhone);
       setConnectionState(settings.evolutionConnectionState);
     }
   }, [settings]);
 
-  const saveInstance = async () => {
+  const createInstance = async () => {
     const sessao = getClientSessao();
     if (!sessao || sessao.tipo !== "admin") return;
+    if (connectionPhone.length < 11) {
+      toast.error("Informe o WhatsApp com 11 dígitos.");
+      return;
+    }
     setLoading(true);
     try {
       const result = await saveEvolutionInstanceAdminRemote({
-        data: { adminWhatsapp: sessao.id, instanceName },
+        data: {
+          adminWhatsapp: sessao.id,
+          instanceName,
+          connectionPhone,
+          recreate,
+        },
       });
-      setConnectionState(result.connectionState);
-      toast.success("Instância salva no Supabase. Gere o QR para conectar o WhatsApp.");
+      applyQrResult(result, { setQrBase64, setPairingCode, setConnectionState });
+      if (result.base64) {
+        toast.success("Instância criada. Escaneie o QR Code no WhatsApp.");
+      } else if (result.pairingCode) {
+        toast.success("Instância criada. Use o código de pareamento no WhatsApp.");
+      } else {
+        toast.success("Instância salva. Clique em Gerar QR Code se o QR não aparecer.");
+      }
       onUpdated();
     } catch (e) {
-      toast.error((e as Error).message ?? "Falha ao salvar instância");
+      toast.error((e as Error).message ?? "Falha ao criar instância");
     } finally {
       setLoading(false);
     }
@@ -56,11 +89,13 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
     setLoading(true);
     try {
       const result = await getEvolutionQrAdminRemote({ data: { adminWhatsapp: sessao.id } });
-      setQrBase64(result.base64);
-      setPairingCode(result.pairingCode);
-      setConnectionState(result.connectionState);
-      if (result.pairingCode) {
-        toast.message(`Código de pareamento: ${result.pairingCode}`);
+      applyQrResult(result, { setQrBase64, setPairingCode, setConnectionState });
+      if (result.base64) {
+        toast.success("QR Code gerado. Escaneie no WhatsApp.");
+      } else if (result.pairingCode) {
+        toast.success("Código de pareamento gerado.");
+      } else {
+        toast.error("Evolution não retornou QR Code.");
       }
       onUpdated();
     } catch (e) {
@@ -82,6 +117,7 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
       if (result.connectionState === "open") {
         toast.success("WhatsApp conectado!");
         setQrBase64(null);
+        setPairingCode(null);
       } else {
         toast.message(`Estado: ${result.connectionState}`);
       }
@@ -104,7 +140,7 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
           <Badge variant={stateVariant}>{connectionState}</Badge>
         </CardTitle>
         <CardDescription>
-          Troque a instância, gere novo QR e conecte outro número. URL e API key continuam nos secrets
+          Crie a instância na Evolution, gere o QR e conecte o número. URL e API key ficam nos secrets
           do servidor (GitHub / Cloudflare).
         </CardDescription>
       </CardHeader>
@@ -113,22 +149,31 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
           <Label htmlFor="evo-instance">Nome da instância</Label>
           <Input
             id="evo-instance"
-            placeholder="erp-up-servicos-producao"
+            placeholder="notificacao-upservicos"
             value={instanceName}
             onChange={(e) => setInstanceName(e.target.value)}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>WhatsApp que vai conectar</Label>
+          <PhoneField value={connectionPhone} onChange={(digits) => setConnectionPhone(digits)} />
           <p className="text-xs text-muted-foreground">
-            Deve ser igual ao nome no painel Evolution. Salvar aqui grava em system_settings e passa a
-            ter prioridade sobre EVOLUTION_INSTANCE do .env.
+            Número do aparelho que vai escanear o QR (11 dígitos, sem 55).
           </p>
         </div>
 
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox checked={recreate} onCheckedChange={(v) => setRecreate(v === true)} />
+          Recriar instância (apaga a anterior na Evolution com o mesmo nome)
+        </label>
+
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" disabled={loading} onClick={() => void saveInstance()}>
-            Salvar instância
+          <Button type="button" disabled={loading} onClick={() => void createInstance()}>
+            Criar instância e gerar QR
           </Button>
-          <Button type="button" disabled={loading} onClick={() => void generateQr()}>
-            Gerar QR Code
+          <Button type="button" variant="secondary" disabled={loading} onClick={() => void generateQr()}>
+            Gerar novo QR
           </Button>
           <Button type="button" variant="outline" disabled={loading} onClick={() => void refreshState()}>
             Verificar conexão
@@ -136,8 +181,11 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
         </div>
 
         {pairingCode && (
-          <p className="text-sm">
-            Código de pareamento: <strong>{pairingCode}</strong> (use 55 + seu WhatsApp no app)
+          <p className="text-sm rounded-md border bg-muted/40 px-4 py-3">
+            Código de pareamento: <strong>{pairingCode}</strong>
+            <span className="block text-xs text-muted-foreground mt-1">
+              WhatsApp → Aparelhos conectados → Conectar com número de telefone
+            </span>
           </p>
         )}
 

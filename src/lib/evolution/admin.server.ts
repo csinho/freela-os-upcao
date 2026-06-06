@@ -1,14 +1,16 @@
 import { getSupabaseServer } from "@/integrations/supabase/server";
 import type { EvolutionQrResult } from "@/lib/admin/types";
 import {
+  ensureEvolutionInstance,
   fetchEvolutionConnectionState,
   fetchEvolutionConnectQr,
-  ensureEvolutionInstance,
+  toEvolutionApiNumber,
 } from "./instance-api.server";
-import { resolveEvolutionInstanceName } from "./instance.server";
+import { resolveEvolutionConnectionPhone, resolveEvolutionInstanceName } from "./instance.server";
 
 type EvolutionSettingsValue = {
   instance_name?: string;
+  connection_phone?: string;
   connection_state?: string;
   connected_at?: string | null;
 };
@@ -44,6 +46,7 @@ async function writeEvolutionSettings(
 
 export async function getEvolutionAdminState(env?: Record<string, string | undefined>): Promise<{
   instanceName: string;
+  connectionPhone: string;
   connectionState: string;
   connectedAt: string | null;
   envFallbackInstance: string | null;
@@ -52,6 +55,7 @@ export async function getEvolutionAdminState(env?: Record<string, string | undef
   const resolved = (await resolveEvolutionInstanceName(env)) ?? "";
   return {
     instanceName: stored.instance_name ?? resolved,
+    connectionPhone: stored.connection_phone ?? "",
     connectionState: stored.connection_state ?? "unknown",
     connectedAt: stored.connected_at ?? null,
     envFallbackInstance: stored.instance_name ? null : resolved || null,
@@ -60,24 +64,42 @@ export async function getEvolutionAdminState(env?: Record<string, string | undef
 
 export async function saveEvolutionInstanceAdmin(
   instanceName: string,
+  connectionPhone11: string,
   env?: Record<string, string | undefined>,
-): Promise<{ instanceName: string; connectionState: string }> {
+  options?: { recreate?: boolean },
+): Promise<EvolutionQrResult> {
   const name = instanceName.trim();
   if (!name) throw new Error("Informe o nome da instância Evolution.");
 
-  await ensureEvolutionInstance(name, env);
-  const state = await fetchEvolutionConnectionState(name, env);
+  const phone11 = connectionPhone11.replace(/\D/g, "");
+  if (phone11.length !== 11) {
+    throw new Error("Informe o WhatsApp com 11 dígitos (DDD + número).");
+  }
+
+  const apiNumber = toEvolutionApiNumber(phone11);
+  const qr = await ensureEvolutionInstance(name, env, {
+    number: apiNumber,
+    qrcode: true,
+    recreate: options?.recreate ?? false,
+  });
+  const connectionState = await fetchEvolutionConnectionState(name, env);
 
   await writeEvolutionSettings(
     {
       instance_name: name,
-      connection_state: state,
-      connected_at: state === "open" ? new Date().toISOString() : null,
+      connection_phone: phone11,
+      connection_state: connectionState,
+      connected_at: connectionState === "open" ? new Date().toISOString() : null,
     },
     env,
   );
 
-  return { instanceName: name, connectionState: state };
+  return {
+    instanceName: name,
+    base64: qr.base64,
+    pairingCode: qr.pairingCode,
+    connectionState,
+  };
 }
 
 export async function getEvolutionQrAdmin(
@@ -88,7 +110,10 @@ export async function getEvolutionQrAdmin(
     throw new Error("Salve o nome da instância antes de gerar o QR Code.");
   }
 
-  const qr = await fetchEvolutionConnectQr(instanceName, env);
+  const storedPhone = await resolveEvolutionConnectionPhone(env);
+  const apiNumber = storedPhone ? toEvolutionApiNumber(storedPhone) : undefined;
+
+  const qr = await fetchEvolutionConnectQr(instanceName, env, apiNumber);
   const connectionState = await fetchEvolutionConnectionState(instanceName, env);
 
   await writeEvolutionSettings(

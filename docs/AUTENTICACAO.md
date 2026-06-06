@@ -39,7 +39,9 @@ ADMIN_WHATSAPP_ALLOWLIST=71996755745
 EVOLUTION_API_URL=
 EVOLUTION_API_KEY=
 EVOLUTION_INSTANCE=
-EVOLUTION_MOCK=true   # desenvolvimento
+```
+
+A instância também pode ser criada pelo painel admin em `/admin/configuracoes` (nome + WhatsApp + QR).
 ```
 
 ## Migration
@@ -77,8 +79,8 @@ EVOLUTION_API_KEY=sua-chave
 EVOLUTION_INSTANCE=nome-exato-da-instancia
 ```
 
-O nome em `EVOLUTION_INSTANCE` deve ser **idêntico** ao que aparece no painel Evolution (case sensitive).
+O nome em `EVOLUTION_INSTANCE` deve ser **idêntico** ao que aparece no painel Evolution (case sensitive). Se configurar pelo admin, `system_settings.evolution` tem prioridade.
 
-**Atalho para testar sem Evolution:** `EVOLUTION_MOCK=true` no Worker — OTP aparece no toast da tela.
+**Não use modo mock em produção.** OTP e QR Code vêm sempre da Evolution API real.
 
 OTP **não usa webhook** — só envia mensagem. Webhook é outro fluxo (ex.: Woovi PIX).

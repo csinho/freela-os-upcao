@@ -4,7 +4,6 @@ import { isAdminWhatsappAllowed } from "@/lib/admin/allowlist.server";
 import type { AdminSessao } from "@/lib/admin/types";
 import { TRIAL_DAYS } from "@/lib/billing/constants";
 import { checkWhatsAppExists, sendOtpText } from "@/lib/evolution/client.server";
-import { isEvolutionMock } from "@/lib/evolution/instance.server";
 import { consumeOtp, saveOtp, verifyOtp } from "./otp-store.server";
 import { createAuthUser, signInSyntheticUser } from "./supabase-auth.server";
 import type { AuthTokens, EmpresaSessao, LoginRole } from "./types";
@@ -150,7 +149,7 @@ async function sendLoginOtpMessage(
   whatsapp11: string,
   purpose: "login" | "admin_login",
   env?: Record<string, string | undefined>,
-): Promise<{ ok: true; message: string; mockCode?: string }> {
+): Promise<{ ok: true; message: string }> {
   const code = await saveOtp(whatsapp11, purpose, env);
   const label = purpose === "admin_login" ? APP_NAME_ADMIN : APP_NAME;
   const text = `*${label}* — Seu código de acesso: *${code}*\nVálido por 10 minutos. Não compartilhe.`;
@@ -160,14 +159,13 @@ async function sendLoginOtpMessage(
   return {
     ok: true,
     message: "Código enviado no WhatsApp.",
-    mockCode: isEvolutionMock(env) ? code : undefined,
   };
 }
 
 export async function requestEmpresaLoginOtp(
   whatsapp11: string,
   env?: Record<string, string | undefined>,
-): Promise<{ ok: true; message: string; mockCode?: string }> {
+): Promise<{ ok: true; message: string }> {
   const empresa = await findEmpresaByWhatsapp(whatsapp11, env);
   if (!empresa) throw new Error("WhatsApp não cadastrado. Crie sua conta primeiro.");
   if (empresa.status === "inativo") {
@@ -183,7 +181,7 @@ export async function requestEmpresaLoginOtp(
 export async function requestAdminLoginOtpUnified(
   whatsapp11: string,
   env?: Record<string, string | undefined>,
-): Promise<{ ok: true; message: string; mockCode?: string }> {
+): Promise<{ ok: true; message: string }> {
   if (!isAdminWhatsappAllowed(whatsapp11, env)) {
     throw new Error("Acesso não autorizado.");
   }

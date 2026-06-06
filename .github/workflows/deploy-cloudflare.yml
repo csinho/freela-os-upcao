@@ -56,7 +56,6 @@ jobs:
           EVOLUTION_API_URL: ${{ secrets.EVOLUTION_API_URL }}
           EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
           EVOLUTION_INSTANCE: ${{ secrets.EVOLUTION_INSTANCE }}
-          EVOLUTION_MOCK: ${{ secrets.EVOLUTION_MOCK }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
@@ -78,9 +77,6 @@ jobs:
           fi
           if [ -n "${EVOLUTION_INSTANCE:-}" ]; then
             put_secret EVOLUTION_INSTANCE "$EVOLUTION_INSTANCE"
-          fi
-          if [ -n "${EVOLUTION_MOCK:-}" ]; then
-            put_secret EVOLUTION_MOCK "$EVOLUTION_MOCK"
           fi
           put_secret VITE_SUPABASE_URL "$VITE_SUPABASE_URL"
           put_secret VITE_SUPABASE_PUBLISHABLE_KEY "$VITE_SUPABASE_PUBLISHABLE_KEY"

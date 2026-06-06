@@ -43,6 +43,7 @@ export async function getBillingSettings(
   const adminValue = (adminRow?.value ?? {}) as { contact_whatsapp?: string };
   const evolutionValue = (evolutionRow?.value ?? {}) as {
     instance_name?: string;
+    connection_phone?: string;
     connection_state?: string;
     connected_at?: string | null;
   };
@@ -60,6 +61,7 @@ export async function getBillingSettings(
     planLabel: formatPlanLabel(planValueCents),
     contactWhatsapp: adminValue.contact_whatsapp ?? "",
     evolutionInstanceName: evolutionValue.instance_name ?? "",
+    evolutionConnectionPhone: evolutionValue.connection_phone ?? "",
     evolutionConnectionState: evolutionValue.connection_state ?? "unknown",
     evolutionConnectedAt: evolutionValue.connected_at ?? null,
   };

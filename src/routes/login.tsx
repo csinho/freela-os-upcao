@@ -60,11 +60,7 @@ function LoginPage() {
       const result = await requestLoginOtpRemote({
         data: { whatsapp, role: resolved.role },
       });
-      if (result.mockCode) {
-        toast.message(`Dev: código ${result.mockCode}`);
-      } else {
-        toast.success(result.message);
-      }
+      toast.success(result.message);
       setStep("otp");
     } catch (e) {
       toast.error((e as Error).message ?? "Falha ao enviar código");

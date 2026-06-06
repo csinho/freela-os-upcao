@@ -34,6 +34,7 @@ export type AdminSettings = {
   planLabel: string;
   contactWhatsapp: string;
   evolutionInstanceName: string;
+  evolutionConnectionPhone: string;
   evolutionConnectionState: string;
   evolutionConnectedAt: string | null;
 };

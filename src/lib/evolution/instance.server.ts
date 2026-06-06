@@ -21,7 +21,21 @@ export async function resolveEvolutionInstanceName(
   return getServerEnv("EVOLUTION_INSTANCE", env) ?? null;
 }
 
-export function isEvolutionMock(env?: Record<string, string | undefined>): boolean {
-  const mock = getServerEnv("EVOLUTION_MOCK", env);
-  return mock === "true" || mock === "1";
+export async function resolveEvolutionConnectionPhone(
+  env?: Record<string, string | undefined>,
+): Promise<string | null> {
+  try {
+    const sb = getSupabaseServer(env);
+    const { data } = await sb
+      .from("system_settings")
+      .select("value")
+      .eq("key", "evolution")
+      .maybeSingle();
+
+    const value = (data?.value ?? {}) as { connection_phone?: string };
+    if (value.connection_phone?.trim()) return value.connection_phone.trim();
+  } catch {
+    // ignore
+  }
+  return null;
 }

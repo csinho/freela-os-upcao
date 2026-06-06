@@ -127,12 +127,20 @@ export const saveAdminContactWhatsappRemote = createServerFn({ method: "POST" })
   });
 
 export const saveEvolutionInstanceAdminRemote = createServerFn({ method: "POST" })
-  .inputValidator((data: { adminWhatsapp: string; instanceName: string }) =>
-    adminWhatsappSchema.extend({ instanceName: z.string().min(1) }).parse(data),
+  .inputValidator((data: { adminWhatsapp: string; instanceName: string; connectionPhone: string; recreate?: boolean }) =>
+    adminWhatsappSchema
+      .extend({
+        instanceName: z.string().min(1),
+        connectionPhone: z.string().regex(/^\d{11}$/),
+        recreate: z.boolean().optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => {
     assertFromInput(data.adminWhatsapp);
-    return saveEvolutionInstanceAdmin(data.instanceName);
+    return saveEvolutionInstanceAdmin(data.instanceName, data.connectionPhone, undefined, {
+      recreate: data.recreate,
+    });
   });
 
 export const getEvolutionQrAdminRemote = createServerFn({ method: "POST" })

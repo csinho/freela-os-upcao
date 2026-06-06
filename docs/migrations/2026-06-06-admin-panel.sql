@@ -19,7 +19,7 @@ create table if not exists system_settings (
 insert into system_settings (key, value) values
   ('billing', '{"plan_value_cents": 3990}'),
   ('admin', '{"contact_whatsapp": ""}'),
-  ('evolution', '{"instance_name": "", "connection_state": "unknown", "connected_at": null}')
+  ('evolution', '{"instance_name": "", "connection_phone": "", "connection_state": "unknown", "connected_at": null}')
 on conflict (key) do nothing;
 
 -- ============ OTP admin (login) ============

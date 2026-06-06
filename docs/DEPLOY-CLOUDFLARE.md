@@ -50,12 +50,13 @@ POST https://upservicos.com/api/webhooks/woovi
 | `ADMIN_WHATSAPP_ALLOWLIST` | Sim (admin) | Login em `/login` — 11 dígitos, vírgula |
 | `EVOLUTION_API_URL` | Sim (OTP) | URL base da Evolution (sem barra no final) |
 | `EVOLUTION_API_KEY` | Sim (OTP) | API key do painel Evolution |
-| `EVOLUTION_INSTANCE` | Sim (OTP) | Nome **exato** da instância conectada no Evolution |
-| `EVOLUTION_MOCK` | Opcional | `true` — OTP no toast, sem WhatsApp (só dev/teste) |
+| `EVOLUTION_INSTANCE` | Opcional | Fallback se a instância ainda não foi salva em `/admin/configuracoes` |
 
 Opcional: `WOOVI_WEBHOOK_AUTHORIZATION` — só se configurar header no painel Woovi.
 
-**Importante:** colocar no GitHub Secrets **não basta** — o workflow sincroniza no Worker a cada deploy. Sem `EVOLUTION_INSTANCE` no Worker, cadastro e login falham com *"Instância Evolution não configurada"*.
+**Importante:** colocar no GitHub Secrets **não basta** — o workflow sincroniza no Worker a cada deploy. Sem `EVOLUTION_API_URL` e `EVOLUTION_API_KEY`, cadastro e login falham. A instância pode ser criada pelo admin (nome + WhatsApp + QR) e fica em `system_settings`.
+
+**Remova** o secret `EVOLUTION_MOCK` do GitHub/Cloudflare se existir — o sistema não usa mais modo mock.
 
 **Variável pública** (não é secret): `PUBLIC_APP_URL` está em `wrangler.jsonc` → `vars.PUBLIC_APP_URL` (`https://upservicos.com`). Altere lá se o domínio mudar.
 
