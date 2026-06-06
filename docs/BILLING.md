@@ -1,5 +1,7 @@
 # Billing — Assinatura Woovi (Up Serviços)
 
+> **Documentação reorganizada:** ver [modulos/08-plano-billing.md](./modulos/08-plano-billing.md) e [specs/woovi-integracao.md](./specs/woovi-integracao.md).
+
 Assinatura mensal do **próprio Up Serviços** via PIX (Woovi/OpenPix). Não confundir com cobrança de pedidos dos clientes do freelancer.
 
 ## Modelo

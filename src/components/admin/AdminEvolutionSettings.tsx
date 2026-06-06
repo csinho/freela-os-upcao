@@ -140,8 +140,9 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
           <Badge variant={stateVariant}>{connectionState}</Badge>
         </CardTitle>
         <CardDescription>
-          Crie a instância na Evolution, gere o QR e conecte o número. URL e API key ficam nos secrets
-          do servidor (GitHub / Cloudflare).
+          Crie a instância na Evolution, gere o QR e conecte o número. Esse WhatsApp também passa a
+          autorizar login admin (allowlist) — não é preciso alterar secrets ao trocar de número. URL e
+          API key ficam nos secrets do servidor (GitHub / Cloudflare).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -159,7 +160,8 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
           <Label>WhatsApp que vai conectar</Label>
           <PhoneField value={connectionPhone} onChange={(digits) => setConnectionPhone(digits)} />
           <p className="text-xs text-muted-foreground">
-            Número do aparelho que vai escanear o QR (11 dígitos, sem 55).
+            Número do aparelho que vai escanear o QR (11 dígitos, sem 55). Após salvar, você pode
+            entrar em /login com este mesmo número.
           </p>
         </div>
 

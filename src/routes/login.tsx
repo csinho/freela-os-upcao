@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/auth/PhoneField";
 import {
@@ -32,6 +32,13 @@ function LoginPage() {
   const [step, setStep] = useState<"whatsapp" | "otp">("whatsapp");
   const [role, setRole] = useState<LoginRole | null>(null);
   const [loading, setLoading] = useState(false);
+  const otpRef = useRef<React.ComponentRef<typeof InputOTP>>(null);
+
+  useEffect(() => {
+    if (step !== "otp") return;
+    const id = requestAnimationFrame(() => otpRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [step]);
 
   useEffect(() => {
     const sessao = getClientSessao();
@@ -128,7 +135,7 @@ function LoginPage() {
                 Código enviado para <strong>{maskDisplay(whatsapp)}</strong>
               </p>
               <div className="flex justify-center">
-                <InputOTP maxLength={6} value={code} onChange={setCode}>
+                <InputOTP ref={otpRef} maxLength={6} value={code} onChange={setCode} autoFocus>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />

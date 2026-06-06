@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { normalizeWhatsapp11 } from "@/lib/admin/allowlist.server";
+import { getRuntimeEnv } from "@/lib/worker-env.server";
 import {
   checkWhatsappRegistered,
   confirmAdminLoginOtpUnified,
@@ -18,22 +19,25 @@ const whatsappInput = z.object({ whatsapp: z.string() });
 export const resolveLoginRoleRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { whatsapp: string }) => whatsappInput.parse(data))
   .handler(async ({ data }) => {
+    const env = getRuntimeEnv();
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
-    return resolveLoginRole(whatsapp);
+    return resolveLoginRole(whatsapp, env);
   });
 
 export const checkWhatsappRegisteredRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { whatsapp: string }) => whatsappInput.parse(data))
   .handler(async ({ data }) => {
+    const env = getRuntimeEnv();
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
-    return checkWhatsappRegistered(whatsapp);
+    return checkWhatsappRegistered(whatsapp, env);
   });
 
 export const verifyWhatsAppOnRegisterRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { whatsapp: string }) => whatsappInput.parse(data))
   .handler(async ({ data }) => {
+    const env = getRuntimeEnv();
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
-    return verifyWhatsAppOnRegister(whatsapp);
+    return verifyWhatsAppOnRegister(whatsapp, env);
   });
 
 export const registerEmpresaWithAuthRemote = createServerFn({ method: "POST" })
@@ -41,8 +45,9 @@ export const registerEmpresaWithAuthRemote = createServerFn({ method: "POST" })
     z.object({ nome: z.string().min(2), whatsapp: z.string() }).parse(data),
   )
   .handler(async ({ data }) => {
+    const env = getRuntimeEnv();
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
-    return registerEmpresaWithAuth(data.nome, whatsapp);
+    return registerEmpresaWithAuth(data.nome, whatsapp, env);
   });
 
 export const requestLoginOtpRemote = createServerFn({ method: "POST" })
@@ -55,11 +60,12 @@ export const requestLoginOtpRemote = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
+    const env = getRuntimeEnv();
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
     if (data.role === "admin") {
-      return requestAdminLoginOtpUnified(whatsapp);
+      return requestAdminLoginOtpUnified(whatsapp, env);
     }
-    return requestEmpresaLoginOtp(whatsapp);
+    return requestEmpresaLoginOtp(whatsapp, env);
   });
 
 export const confirmLoginOtpRemote = createServerFn({ method: "POST" })
@@ -73,14 +79,15 @@ export const confirmLoginOtpRemote = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
+    const env = getRuntimeEnv();
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
     const code = data.code.replace(/\D/g, "");
     if (code.length !== 6) throw new Error("Código deve ter 6 dígitos.");
 
     if (data.role === "admin") {
-      return confirmAdminLoginOtpUnified(whatsapp, code);
+      return confirmAdminLoginOtpUnified(whatsapp, code, env);
     }
-    return confirmEmpresaLoginOtp(whatsapp, code);
+    return confirmEmpresaLoginOtp(whatsapp, code, env);
   });
 
 export const registerEmpresaByAdminRemote = createServerFn({ method: "POST" })
@@ -95,7 +102,8 @@ export const registerEmpresaByAdminRemote = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { assertAdminWhatsappAllowed } = await import("@/lib/admin/allowlist.server");
-    assertAdminWhatsappAllowed(data.adminWhatsapp);
+    const env = getRuntimeEnv();
+    await assertAdminWhatsappAllowed(data.adminWhatsapp, env);
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
-    return registerEmpresaByAdmin(data.nome, whatsapp);
+    return registerEmpresaByAdmin(data.nome, whatsapp, env);
   });

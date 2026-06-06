@@ -1,5 +1,7 @@
 # Módulos
 
+> **Documentação reorganizada:** ver [modulos/README.md](./modulos/README.md) — um arquivo por módulo com rotas, arquivos e regras de implementação.
+
 ## 1. Dashboard (`/`)
 
 Cards de indicadores:

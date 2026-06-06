@@ -129,7 +129,10 @@ function AdminConfiguracoesPage() {
           <Card>
             <CardHeader>
               <CardTitle>Contato de suporte</CardTitle>
-              <CardDescription>WhatsApp exibido para empresas (apenas dígitos).</CardDescription>
+              <CardDescription>
+                WhatsApp exibido para empresas. Ao salvar a instância Evolution abaixo, este campo é
+                atualizado automaticamente com o mesmo número.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">

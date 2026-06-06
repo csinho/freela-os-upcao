@@ -65,7 +65,8 @@ function PlanoPage() {
               {billing.phase === "trial" && (
                 <p className="text-sm">
                   Você está no trial gratuito até <strong>{formatDatePt(billing.trialEndsAt)}</strong> (
-                  {billing.daysUntilDue} dia(s) restantes).
+                  {billing.daysUntilDue} dia(s) restantes). Você pode pagar antecipado a qualquer momento
+                  com o botão abaixo.
                 </p>
               )}
 

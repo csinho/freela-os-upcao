@@ -126,7 +126,8 @@ function SetupWhatsappPage() {
           <CardTitle className="text-center">Setup WhatsApp (sem login)</CardTitle>
           <CardDescription className="text-center">
             Use quando a instância Evolution foi apagada e você não consegue receber OTP para entrar no admin.
-            Protegido pela chave <code className="text-xs">BILLING_CRON_SECRET</code> do servidor.
+            O WhatsApp informado aqui também autoriza login admin após salvar. Protegido pela chave{" "}
+            <code className="text-xs">BILLING_CRON_SECRET</code> do servidor.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -165,6 +166,9 @@ function SetupWhatsappPage() {
               <div className="space-y-2">
                 <Label>WhatsApp que vai conectar</Label>
                 <PhoneField value={connectionPhone} onChange={setConnectionPhone} />
+                <p className="text-xs text-muted-foreground">
+                  Após criar a instância, este número autoriza login admin em /login (allowlist).
+                </p>
               </div>
 
               <label className="flex items-center gap-2 text-sm">

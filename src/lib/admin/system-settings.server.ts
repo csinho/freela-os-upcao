@@ -1,14 +1,6 @@
 import { getSupabaseServer } from "@/integrations/supabase/server";
-import { PLAN_VALUE_CENTS } from "@/lib/billing/constants";
+import { buildPublicPlanSettings } from "@/lib/billing/plan-settings";
 import type { AdminSettings } from "./types";
-
-function formatPlanLabel(cents: number): string {
-  const reais = (cents / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-  return `${reais}/mês`;
-}
 
 export async function getBillingPlanValueCents(
   env?: Record<string, string | undefined>,
@@ -48,17 +40,11 @@ export async function getBillingSettings(
     connected_at?: string | null;
   };
 
-  const rawCents = billingValue.plan_value_cents;
-  const planValueCents =
-    typeof rawCents === "number"
-      ? rawCents
-      : typeof rawCents === "string"
-        ? parseInt(rawCents, 10) || PLAN_VALUE_CENTS
-        : PLAN_VALUE_CENTS;
+  const { planValueCents, planLabel } = buildPublicPlanSettings(billingValue.plan_value_cents);
 
   return {
     planValueCents,
-    planLabel: formatPlanLabel(planValueCents),
+    planLabel,
     contactWhatsapp: adminValue.contact_whatsapp ?? "",
     evolutionInstanceName: evolutionValue.instance_name ?? "",
     evolutionConnectionPhone: evolutionValue.connection_phone ?? "",

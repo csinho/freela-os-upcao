@@ -5,6 +5,7 @@ import { maskTelefone, onlyDigits, validateTelefone } from "@/lib/validators";
 type PhoneFieldProps = {
   id?: string;
   label?: string;
+  placeholder?: string;
   value: string;
   onChange: (digits11: string, masked: string) => void;
   disabled?: boolean;
@@ -13,6 +14,7 @@ type PhoneFieldProps = {
 export function PhoneField({
   id = "whatsapp",
   label = "WhatsApp",
+  placeholder = "(11) 9 9999-9999",
   value,
   onChange,
   disabled,
@@ -26,7 +28,7 @@ export function PhoneField({
       <Input
         id={id}
         inputMode="numeric"
-        placeholder="(71) 9 9675-5745"
+        placeholder={placeholder}
         value={masked}
         disabled={disabled}
         onChange={(e) => {

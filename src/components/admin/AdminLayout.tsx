@@ -1,5 +1,5 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { useState, type ReactNode } from "react";
 import {
   Building2,
   LayoutDashboard,
@@ -53,7 +53,7 @@ function NavLinks({
   );
 }
 
-export function AdminLayout() {
+export function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
   const logout = () => {
@@ -120,7 +120,7 @@ export function AdminLayout() {
           </header>
 
           <main className="flex-1 p-4 sm:p-6 md:p-8 min-w-0 overflow-auto">
-            <Outlet />
+            {children}
           </main>
 
           <nav className="md:hidden border-t bg-card flex justify-around py-2 shrink-0">

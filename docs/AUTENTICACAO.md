@@ -1,5 +1,7 @@
 # Autenticação — Up Serviços
 
+> **Documentação reorganizada:** ver [modulos/09-autenticacao.md](./modulos/09-autenticacao.md) e [specs/erp-autenticacao-evolution-admin.md](./specs/erp-autenticacao-evolution-admin.md).
+
 ## Fluxos
 
 ### Primeiro acesso — `/cadastro/empresa`
@@ -35,14 +37,14 @@ Senha aleatória rotacionada no servidor a cada login OTP.
 ## Variáveis
 
 ```env
-ADMIN_WHATSAPP_ALLOWLIST=71996755745
+# Opcional após 1º setup — bootstrap ou admins extras
+ADMIN_WHATSAPP_ALLOWLIST=
 EVOLUTION_API_URL=
 EVOLUTION_API_KEY=
 EVOLUTION_INSTANCE=
 ```
 
-A instância também pode ser criada pelo painel admin em `/admin/configuracoes` (nome + WhatsApp + QR).
-```
+A instância pode ser criada em `/admin/configuracoes` ou `/setup/whatsapp`. O número salvo (`connection_phone`) também autoriza login admin (allowlist efetiva = env ∪ banco).
 
 ## Migration
 
@@ -64,7 +66,7 @@ Demais rotas ERP exigem sessão `tipo: "empresa"`. Rotas `/admin/*` exigem `tipo
 ### Como entrar no admin
 
 1. Acesse **`https://seu-dominio.com/login`** (não existe tela separada — `/admin/login` redireciona para `/login`)
-2. Informe o WhatsApp que está em `ADMIN_WHATSAPP_ALLOWLIST` (ex.: `71996755745`)
+2. Informe o WhatsApp da allowlist efetiva (env ou o número configurado na Evolution)
 3. Receba OTP no WhatsApp → confirme → vai para `/admin/dashboard`
 
 O servidor detecta automaticamente: allowlist = admin; cadastro existente = empresa.

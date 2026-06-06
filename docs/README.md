@@ -1,114 +1,84 @@
 # Up Serviços — Documentação
 
-Sistema interno para gerenciar **orçamentos, pedidos, clientes, serviços e financeiro** de freelancer, com Kanban e geração de PDF profissional.
+ERP SaaS multi-tenant para freelancers: orçamentos, pedidos (Kanban), clientes, serviços, financeiro, PDF, autenticação por WhatsApp, painel admin e assinatura PIX.
 
-## Stack
+## Como navegar
 
-| Camada | Tecnologia |
-|--------|------------|
-| Framework | TanStack Start + React 19 + TypeScript |
-| Build | Vite 7 |
-| UI | Tailwind CSS v4 + shadcn/ui |
-| Dados | Supabase (PostgreSQL) + TanStack Query |
-| Kanban | @dnd-kit |
-| PDF | [pdfmake](https://pdfmake.github.io/docs/0.3/) (client-side) |
-| Deploy alvo | GitHub → **EasyPanel** (SSR via Cloudflare Workers runtime no build) |
+A documentação está organizada em quatro áreas:
 
-> **Sem login.** Uso pessoal. RLS do Supabase liberada para `anon` — veja [supabase.md](./supabase.md#segurança).
+| Pasta | Conteúdo |
+|-------|----------|
+| [arquitetura/](./arquitetura/README.md) | Visão geral, stack, fluxo de requisição, padrões de código |
+| [specs/](./specs/README.md) | Especificações originais (requisitos e decisões de produto) |
+| [modulos/](./modulos/README.md) | Implementação módulo a módulo (rotas, arquivos, regras) |
+| [infraestrutura/](./infraestrutura/README.md) | Banco, Supabase, deploy, migrations, variáveis de ambiente |
 
-## Variáveis de ambiente
-
-**Nada de URL ou chave do Supabase fica fixo no código.** Use o arquivo `.env` local ou o painel do EasyPanel.
-
-| Variável | Obrigatória | Descrição |
-|----------|-------------|-----------|
-| `VITE_SUPABASE_URL` | Sim | URL do projeto (Supabase → Settings → API) |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Sim | Chave **publishable** (pública, segura no front) |
-
-Copie `.env.example` → `.env` e preencha antes de `npm run dev` ou `npm run build`.
-
-> **Importante (Vite):** variáveis `VITE_*` são embutidas no bundle no momento do **build**. No EasyPanel, configure-as **antes** do comando de build, não só no container em execução.
-
-## Como rodar localmente
+## Início rápido
 
 ```bash
-cp .env.example .env
-# edite .env com suas credenciais Supabase
-
+cp .env.example .env   # preencha VITE_SUPABASE_* e variáveis de servidor
 npm install
 npm run dev
 ```
 
-Banco de dados (primeira vez): [supabase.md](./supabase.md).
+Sem `.env`, o servidor retorna erro 500 (variáveis `VITE_*` ausentes no build).
 
-## Scripts
+## Stack resumida
 
-| Comando | Uso |
-|---------|-----|
-| `npm run dev` | Desenvolvimento |
-| `npm run build` | Build de produção |
-| `npm run preview` | Preview local pós-build |
-| `npm run lint` | ESLint + Prettier |
+| Camada | Tecnologia |
+|--------|------------|
+| Framework | TanStack Start + React 19 + TypeScript |
+| Roteamento | TanStack Router (file-based) |
+| Dados | Supabase + TanStack Query |
+| UI | Tailwind CSS v4 + shadcn/ui |
+| Auth | Supabase Auth + OTP WhatsApp (Evolution API) |
+| Billing SaaS | Woovi/OpenPix (PIX) |
+| Deploy | Cloudflare Workers (primário) ou Docker/EasyPanel |
 
-## Estrutura do projeto
+## Mapa de módulos
 
-```
-src/
-  routes/                 # páginas (file-based routing)
-    index.tsx             # Dashboard
-    kanban.tsx
-    clientes.tsx
-    servicos.tsx
-    orcamentos.index.tsx
-    orcamentos.$id.tsx    # edição + PDF
-    financeiro.tsx
-    empresa.tsx
-  components/
-    app-shell.tsx         # layout (sidebar, logo, favicon)
-    pdf-preview.tsx
-    crud-dialog.tsx
-    ui/                   # shadcn
-  integrations/supabase/
-    client.ts             # client Supabase (lê VITE_*)
-  lib/
-    types.ts              # tipos + calcTotal, formatBRL, etc.
-    repository.ts         # acesso Supabase
-    store.ts              # hooks TanStack Query
-    validators.ts         # máscaras CPF, telefone, %, CEP
-    viacep.ts
-    orcamento-draft.ts    # rascunho em sessionStorage
-  hooks/
-    use-empresa-branding.ts
-docs/
-  README.md               # este arquivo
-  deploy.md               # GitHub + EasyPanel
-  supabase.md
-  banco-de-dados.md
-  modulos.md
-  migrations/             # SQL incremental
-public/
-  favicon.svg
-```
+### ERP (empresa logada)
 
-## Funcionalidades principais
+| Módulo | Rota | Doc |
+|--------|------|-----|
+| Dashboard | `/` | [modulos/01-dashboard.md](./modulos/01-dashboard.md) |
+| Kanban | `/kanban` | [modulos/02-kanban.md](./modulos/02-kanban.md) |
+| Clientes | `/clientes` | [modulos/03-clientes.md](./modulos/03-clientes.md) |
+| Serviços | `/servicos` | [modulos/04-servicos.md](./modulos/04-servicos.md) |
+| Orçamentos | `/orcamentos`, `/orcamentos/$id` | [modulos/05-orcamentos.md](./modulos/05-orcamentos.md) |
+| Financeiro | `/financeiro` | [modulos/06-financeiro.md](./modulos/06-financeiro.md) |
+| Empresa | `/empresa` | [modulos/07-empresa.md](./modulos/07-empresa.md) |
+| Plano (billing) | `/plano` | [modulos/08-plano-billing.md](./modulos/08-plano-billing.md) |
+| PDF | (dentro de orçamentos) | [modulos/11-pdf.md](./modulos/11-pdf.md) |
 
-- **Empresa:** cadastro único, logo (sidebar + favicon), condições padrão
-- **Orçamentos / pedidos:** itens, desconto em **%**, PDF com percentual e valor em R$
-- **Kanban:** arrastar status; aprovação gera lançamento no financeiro
-- **Financeiro:** automático a partir dos pedidos (sem lançamento manual)
-- **Clientes / serviços:** CRUD com validações e ViaCEP
+### Auth e onboarding
 
-Detalhes por módulo: [modulos.md](./modulos.md).
+| Módulo | Rota | Doc |
+|--------|------|-----|
+| Login | `/login` | [modulos/09-autenticacao.md](./modulos/09-autenticacao.md) |
+| Cadastro | `/cadastro/empresa` | [modulos/09-autenticacao.md](./modulos/09-autenticacao.md) |
+| Setup WhatsApp | `/setup/whatsapp` | [modulos/12-setup-whatsapp.md](./modulos/12-setup-whatsapp.md) |
 
-## Deploy
+### Painel admin
 
-Fluxo recomendado: repositório no **GitHub** → app no **EasyPanel**.
+| Módulo | Rota | Doc |
+|--------|------|-----|
+| Dashboard admin | `/admin/dashboard` | [modulos/10-admin.md](./modulos/10-admin.md) |
+| Empresas | `/admin/empresas` | [modulos/10-admin.md](./modulos/10-admin.md) |
+| Configurações | `/admin/configuracoes` | [modulos/10-admin.md](./modulos/10-admin.md) |
 
-Guia passo a passo: **[deploy.md](./deploy.md)**.
+## Documentos legados (raiz de `docs/`)
 
-## Documentos relacionados
+Arquivos mantidos na raiz por compatibilidade. O conteúdo atualizado está nas pastas acima.
 
-- [supabase.md](./supabase.md) — schema, RLS, migrações
-- [banco-de-dados.md](./banco-de-dados.md) — tabelas e campos
-- [modulos.md](./modulos.md) — regras de negócio por tela
-- [pdf.md](./pdf.md) — layout do PDF (se existir)
+| Arquivo legado | Nova localização |
+|----------------|------------------|
+| `modulos.md` | [modulos/](./modulos/) |
+| `AUTENTICACAO.md` | [modulos/09-autenticacao.md](./modulos/09-autenticacao.md) |
+| `ADMIN.md` | [modulos/10-admin.md](./modulos/10-admin.md) |
+| `BILLING.md` | [modulos/08-plano-billing.md](./modulos/08-plano-billing.md) |
+| `pdf.md` | [modulos/11-pdf.md](./modulos/11-pdf.md) |
+| `supabase.md` | [infraestrutura/supabase.md](./infraestrutura/supabase.md) |
+| `banco-de-dados.md` | [infraestrutura/banco-de-dados.md](./infraestrutura/banco-de-dados.md) |
+| `deploy.md` / `DEPLOY-CLOUDFLARE.md` | [infraestrutura/](./infraestrutura/) |
+| `ESPECIFICACAO-*.md` / `PROMPT-WOOVI-*.md` | [specs/](./specs/) |

@@ -25,15 +25,15 @@ import { listarPagamentosPlano } from "@/lib/billing/payments.server";
 
 const adminWhatsappSchema = z.object({ adminWhatsapp: z.string().regex(/^\d{11}$/) });
 
-function assertFromInput(adminWhatsapp: string) {
-  assertAdminWhatsappAllowed(adminWhatsapp);
+async function assertFromInput(adminWhatsapp: string) {
+  await assertAdminWhatsappAllowed(adminWhatsapp);
 }
 
 export const checkAdminWhatsappAllowedRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { whatsapp: string }) => data)
   .handler(async ({ data }) => {
     const whatsapp = normalizeWhatsapp11(data.whatsapp);
-    return { allowed: isAdminWhatsappAllowed(whatsapp) };
+    return { allowed: await isAdminWhatsappAllowed(whatsapp) };
   });
 
 export const requestAdminLoginOtpRemote = createServerFn({ method: "POST" })
@@ -57,7 +57,7 @@ export const listarEmpresasAdminRemote = createServerFn({ method: "POST" })
     adminWhatsappSchema.extend({ search: z.string().optional() }).parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return listarEmpresasAdmin(data.search);
   });
 
@@ -66,7 +66,7 @@ export const obterEmpresaAdminRemote = createServerFn({ method: "POST" })
     adminWhatsappSchema.extend({ empresaId: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return obterEmpresaAdmin(data.empresaId);
   });
 
@@ -77,7 +77,7 @@ export const setEmpresaPausadaAdminRemote = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     await setEmpresaPausadaAdmin(data.empresaId, data.pausada);
     return { ok: true };
   });
@@ -93,7 +93,7 @@ export const listarPagamentosPlanoAdminRemote = createServerFn({ method: "POST" 
       .parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return listarPagamentosPlano({
       empresaId: data.empresaId,
       dateFrom: data.dateFrom,
@@ -104,7 +104,7 @@ export const listarPagamentosPlanoAdminRemote = createServerFn({ method: "POST" 
 export const getAdminSettingsRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { adminWhatsapp: string }) => adminWhatsappSchema.parse(data))
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return getAdminSettings();
   });
 
@@ -113,7 +113,7 @@ export const saveAdminBillingPlanRemote = createServerFn({ method: "POST" })
     adminWhatsappSchema.extend({ planValueReais: z.number().positive() }).parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return saveAdminBillingPlan(data.planValueReais);
   });
 
@@ -122,7 +122,7 @@ export const saveAdminContactWhatsappRemote = createServerFn({ method: "POST" })
     adminWhatsappSchema.extend({ contactWhatsapp: z.string() }).parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return saveAdminContactWhatsapp(data.contactWhatsapp);
   });
 
@@ -137,7 +137,7 @@ export const saveEvolutionInstanceAdminRemote = createServerFn({ method: "POST" 
       .parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return saveEvolutionInstanceAdmin(data.instanceName, data.connectionPhone, undefined, {
       recreate: data.recreate,
     });
@@ -146,14 +146,14 @@ export const saveEvolutionInstanceAdminRemote = createServerFn({ method: "POST" 
 export const getEvolutionQrAdminRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { adminWhatsapp: string }) => adminWhatsappSchema.parse(data))
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return getEvolutionQrAdmin();
   });
 
 export const refreshEvolutionConnectionAdminRemote = createServerFn({ method: "POST" })
   .inputValidator((data: { adminWhatsapp: string }) => adminWhatsappSchema.parse(data))
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return refreshEvolutionConnectionAdmin();
   });
 
@@ -162,6 +162,6 @@ export const getAdminDashboardRemote = createServerFn({ method: "POST" })
     adminWhatsappSchema.extend({ from: z.string(), to: z.string() }).parse(data),
   )
   .handler(async ({ data }) => {
-    assertFromInput(data.adminWhatsapp);
+    await assertFromInput(data.adminWhatsapp);
     return getAdminDashboard(data.from, data.to);
   });

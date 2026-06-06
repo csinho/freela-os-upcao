@@ -1,5 +1,7 @@
 # Geração de PDF
 
+> **Documentação reorganizada:** ver [modulos/11-pdf.md](./modulos/11-pdf.md).
+
 Implementada com **[pdfmake](https://pdfmake.github.io/docs/0.3/)** (client-side, JavaScript puro).
 
 ## Arquivos

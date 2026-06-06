@@ -16,7 +16,7 @@ export async function resolveLoginRole(
   whatsapp11: string,
   env?: Record<string, string | undefined>,
 ): Promise<{ role: LoginRole; empresaNome?: string }> {
-  if (isAdminWhatsappAllowed(whatsapp11, env)) {
+  if (await isAdminWhatsappAllowed(whatsapp11, env)) {
     return { role: "admin" };
   }
 
@@ -182,7 +182,7 @@ export async function requestAdminLoginOtpUnified(
   whatsapp11: string,
   env?: Record<string, string | undefined>,
 ): Promise<{ ok: true; message: string }> {
-  if (!isAdminWhatsappAllowed(whatsapp11, env)) {
+  if (!(await isAdminWhatsappAllowed(whatsapp11, env))) {
     throw new Error("Acesso não autorizado.");
   }
   return sendLoginOtpMessage(whatsapp11, "admin_login", env);
@@ -226,7 +226,7 @@ export async function confirmAdminLoginOtpUnified(
   code: string,
   env?: Record<string, string | undefined>,
 ): Promise<{ sessao: AdminSessao }> {
-  if (!isAdminWhatsappAllowed(whatsapp11, env)) {
+  if (!(await isAdminWhatsappAllowed(whatsapp11, env))) {
     throw new Error("Acesso não autorizado.");
   }
 

@@ -5,6 +5,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { runBillingDailyJob } from "./lib/billing/billing.server";
 import { getServerEnv } from "./lib/env.server";
+import { setWorkerEnv } from "./lib/worker-env.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -89,6 +90,7 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const bindings = envRecord(env);
+      setWorkerEnv(bindings);
       const apiResponse = await handleApiRequest(request, bindings);
       if (apiResponse) return apiResponse;
 
@@ -102,6 +104,7 @@ export default {
   },
   async scheduled(_event: unknown, env: unknown, _ctx: unknown) {
     const bindings = envRecord(env);
+    setWorkerEnv(bindings);
     const secret = getServerEnv("BILLING_CRON_SECRET", bindings);
     if (!secret) {
       console.warn("[billing-cron] BILLING_CRON_SECRET ausente — cron ignorado.");

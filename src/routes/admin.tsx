@@ -10,5 +10,9 @@ function AdminShell() {
   if (pathname === "/admin/login") {
     return <Outlet />;
   }
-  return <AdminLayout />;
+  return (
+    <AdminLayout>
+      <Outlet />
+    </AdminLayout>
+  );
 }

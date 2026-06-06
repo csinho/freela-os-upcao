@@ -47,16 +47,20 @@ POST https://upservicos.com/api/webhooks/woovi
 | `SUPABASE_SERVICE_ROLE_KEY` | Sim | Billing / webhooks no servidor |
 | `WOOVI_APP_ID` | Sim | API Woovi |
 | `BILLING_CRON_SECRET` | Sim | Protege `/api/cron/billing` |
-| `ADMIN_WHATSAPP_ALLOWLIST` | Sim (admin) | Login em `/login` — 11 dígitos, vírgula |
+| `ADMIN_WHATSAPP_ALLOWLIST` | Opcional* | Bootstrap / admins extras; número da Evolution no banco também autoriza login |
 | `EVOLUTION_API_URL` | Sim (OTP) | URL base da Evolution (sem barra no final) |
 | `EVOLUTION_API_KEY` | Sim (OTP) | API key do painel Evolution |
 | `EVOLUTION_INSTANCE` | Opcional | Fallback se a instância ainda não foi salva em `/admin/configuracoes` |
 
 Opcional: `WOOVI_WEBHOOK_AUTHORIZATION` — só se configurar header no painel Woovi.
 
-**Importante:** colocar no GitHub Secrets **não basta** — o workflow sincroniza no Worker a cada deploy. Sem `EVOLUTION_API_URL` e `EVOLUTION_API_KEY`, cadastro e login falham. A instância pode ser criada pelo admin (nome + WhatsApp + QR) e fica em `system_settings`.
+**Importante:** colocar no GitHub Secrets **não basta** — o workflow sincroniza no Worker a cada deploy. Sem `EVOLUTION_API_URL` e `EVOLUTION_API_KEY`, cadastro e login falham. A instância pode ser criada pelo admin (nome + WhatsApp + QR) e fica em `system_settings` — o `connection_phone` salvo também entra na allowlist de login admin.
 
-**Remova** o secret `EVOLUTION_MOCK` do GitHub/Cloudflare se existir — o sistema não usa mais modo mock.
+\* `ADMIN_WHATSAPP_ALLOWLIST` é necessária só no primeiro deploy (banco sem Evolution configurada). Depois, trocar o número pelo admin/setup dispensa atualizar o secret.
+
+**Remova** o secret `EVOLUTION_MOCK` do Cloudflare/GitHub se existir — o código não lê essa variável.
+
+`PUBLIC_APP_URL` pode ficar só em `wrangler.jsonc` → `vars` (texto não criptografado). Não precisa duplicar como secret.
 
 ### Recuperação: Evolution apagada e sem login admin
 

@@ -4,6 +4,15 @@ export type OtpPurpose = "login" | "admin_login";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 
+function wrapOtpDbError(message: string): Error {
+  if (message.includes("permission denied") || message.includes("row-level security")) {
+    return new Error(
+      `${message} — confira SUPABASE_SERVICE_ROLE_KEY no .env (chave service_role eyJ...) e reinicie o npm run dev.`,
+    );
+  }
+  return new Error(message);
+}
+
 export async function hashOtpCode(code: string): Promise<string> {
   const data = new TextEncoder().encode(code);
   const hash = await crypto.subtle.digest("SHA-256", data);
@@ -26,7 +35,9 @@ export async function saveOtp(
   const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
 
   const sb = getSupabaseServer(env);
-  await sb.from("login_otp").delete().eq("whatsapp", whatsapp).eq("purpose", purpose);
+
+  const del = await sb.from("login_otp").delete().eq("whatsapp", whatsapp).eq("purpose", purpose);
+  if (del.error) throw wrapOtpDbError(del.error.message);
 
   const { error } = await sb.from("login_otp").insert({
     whatsapp,
@@ -36,7 +47,7 @@ export async function saveOtp(
     created_at: new Date().toISOString(),
   });
 
-  if (error) throw new Error(error.message);
+  if (error) throw wrapOtpDbError(error.message);
   return code;
 }
 
@@ -54,7 +65,7 @@ export async function verifyOtp(
     .eq("purpose", purpose)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) throw wrapOtpDbError(error.message);
   if (!data) return false;
   if (new Date(data.expires_at as string).getTime() < Date.now()) return false;
 
@@ -69,5 +80,5 @@ export async function consumeOtp(
 ): Promise<void> {
   const sb = getSupabaseServer(env);
   const { error } = await sb.from("login_otp").delete().eq("whatsapp", whatsapp).eq("purpose", purpose);
-  if (error) throw new Error(error.message);
+  if (error) throw wrapOtpDbError(error.message);
 }

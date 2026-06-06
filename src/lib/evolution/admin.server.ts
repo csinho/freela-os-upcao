@@ -1,4 +1,5 @@
 import { getSupabaseServer } from "@/integrations/supabase/server";
+import { saveAdminContactWhatsapp } from "@/lib/admin/system-settings.server";
 import type { EvolutionQrResult } from "@/lib/admin/types";
 import {
   ensureEvolutionInstance,
@@ -93,6 +94,8 @@ export async function saveEvolutionInstanceAdmin(
     },
     env,
   );
+
+  await saveAdminContactWhatsapp(phone11, env);
 
   return {
     instanceName: name,

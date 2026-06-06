@@ -42,7 +42,8 @@ export function getBillingUiState(
     billingStatus === "trial" ? "trial" : isPaidAndCurrent ? "ativo" : "pendente";
 
   const showPixPaymentButton =
-    !isPaidAndCurrent && (needsPayment || daysUntilDue <= PIX_BUTTON_VISIBLE_DAYS);
+    !isPaidAndCurrent &&
+    (billingStatus === "trial" || needsPayment || daysUntilDue <= PIX_BUTTON_VISIBLE_DAYS);
 
   return {
     phase,

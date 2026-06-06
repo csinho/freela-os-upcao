@@ -1,0 +1,10 @@
+# Secrets para `wrangler dev` / Cloudflare Vite plugin (copie para .dev.vars)
+# Não commitar .dev.vars — contém chaves reais.
+
+SUPABASE_SERVICE_ROLE_KEY=
+BILLING_CRON_SECRET=
+WOOVI_APP_ID=
+ADMIN_WHATSAPP_ALLOWLIST=
+EVOLUTION_API_URL=
+EVOLUTION_API_KEY=
+EVOLUTION_INSTANCE=

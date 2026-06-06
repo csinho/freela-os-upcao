@@ -12,6 +12,6 @@ npm run dev
 
 Sem o `.env`, o servidor retorna erro 500 ao iniciar (variáveis `VITE_*` ausentes).
 
-Documentação completa em **[docs/README.md](docs/README.md)**.
+Documentação completa em **[docs/README.md](docs/README.md)** — organizada por [arquitetura](docs/arquitetura/), [specs](docs/specs/), [módulos](docs/modulos/) e [infraestrutura](docs/infraestrutura/).
 
 Deploy (GitHub → EasyPanel, **Dockerfile** na raiz): **[docs/deploy.md](docs/deploy.md)**.
