@@ -53,6 +53,10 @@ jobs:
           WOOVI_APP_ID: ${{ secrets.WOOVI_APP_ID }}
           BILLING_CRON_SECRET: ${{ secrets.BILLING_CRON_SECRET }}
           ADMIN_WHATSAPP_ALLOWLIST: ${{ secrets.ADMIN_WHATSAPP_ALLOWLIST }}
+          EVOLUTION_API_URL: ${{ secrets.EVOLUTION_API_URL }}
+          EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
+          EVOLUTION_INSTANCE: ${{ secrets.EVOLUTION_INSTANCE }}
+          EVOLUTION_MOCK: ${{ secrets.EVOLUTION_MOCK }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
@@ -65,6 +69,18 @@ jobs:
           put_secret BILLING_CRON_SECRET "$BILLING_CRON_SECRET"
           if [ -n "${ADMIN_WHATSAPP_ALLOWLIST:-}" ]; then
             put_secret ADMIN_WHATSAPP_ALLOWLIST "$ADMIN_WHATSAPP_ALLOWLIST"
+          fi
+          if [ -n "${EVOLUTION_API_URL:-}" ]; then
+            put_secret EVOLUTION_API_URL "$EVOLUTION_API_URL"
+          fi
+          if [ -n "${EVOLUTION_API_KEY:-}" ]; then
+            put_secret EVOLUTION_API_KEY "$EVOLUTION_API_KEY"
+          fi
+          if [ -n "${EVOLUTION_INSTANCE:-}" ]; then
+            put_secret EVOLUTION_INSTANCE "$EVOLUTION_INSTANCE"
+          fi
+          if [ -n "${EVOLUTION_MOCK:-}" ]; then
+            put_secret EVOLUTION_MOCK "$EVOLUTION_MOCK"
           fi
           put_secret VITE_SUPABASE_URL "$VITE_SUPABASE_URL"
           put_secret VITE_SUPABASE_PUBLISHABLE_KEY "$VITE_SUPABASE_PUBLISHABLE_KEY"

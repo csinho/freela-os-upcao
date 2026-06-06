@@ -33,6 +33,16 @@ export type AdminSettings = {
   planValueCents: number;
   planLabel: string;
   contactWhatsapp: string;
+  evolutionInstanceName: string;
+  evolutionConnectionState: string;
+  evolutionConnectedAt: string | null;
+};
+
+export type EvolutionQrResult = {
+  instanceName: string;
+  base64: string | null;
+  pairingCode: string | null;
+  connectionState: string;
 };
 
 export type AdminDashboardMetrics = {

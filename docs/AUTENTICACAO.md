@@ -54,7 +54,31 @@ docs/migrations/2026-06-06-auth-login.sql
 
 ## Rotas públicas
 
-- `/login`
-- `/cadastro/empresa`
+- `/login` — **login unificado** (empresa **e** admin)
+- `/cadastro/empresa` — primeiro acesso
 
 Demais rotas ERP exigem sessão `tipo: "empresa"`. Rotas `/admin/*` exigem `tipo: "admin"`.
+
+### Como entrar no admin
+
+1. Acesse **`https://seu-dominio.com/login`** (não existe tela separada — `/admin/login` redireciona para `/login`)
+2. Informe o WhatsApp que está em `ADMIN_WHATSAPP_ALLOWLIST` (ex.: `71996755745`)
+3. Receba OTP no WhatsApp → confirme → vai para `/admin/dashboard`
+
+O servidor detecta automaticamente: allowlist = admin; cadastro existente = empresa.
+
+### Evolution — por que “instância não configurada”?
+
+O WhatsApp **conectado no painel Evolution** ≠ o app saber qual instância usar. O Worker precisa de:
+
+```env
+EVOLUTION_API_URL=https://sua-evolution.com
+EVOLUTION_API_KEY=sua-chave
+EVOLUTION_INSTANCE=nome-exato-da-instancia
+```
+
+O nome em `EVOLUTION_INSTANCE` deve ser **idêntico** ao que aparece no painel Evolution (case sensitive).
+
+**Atalho para testar sem Evolution:** `EVOLUTION_MOCK=true` no Worker — OTP aparece no toast da tela.
+
+OTP **não usa webhook** — só envia mensagem. Webhook é outro fluxo (ex.: Woovi PIX).

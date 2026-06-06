@@ -9,6 +9,7 @@ import {
 import type { AdminSettings } from "@/lib/admin/types";
 import { useAdminRefreshTick } from "@/components/admin/admin-refresh-context";
 import { getClientSessao } from "@/lib/auth/client-session";
+import { AdminEvolutionSettings } from "@/components/admin/AdminEvolutionSettings";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +64,7 @@ function AdminConfiguracoesPage() {
         data: { adminWhatsapp: sessao.id, planValueReais: value },
       });
       setSettings(updated);
-      toast.success("Valor do plano atualizado. Novas cobranças usarão o novo preço.");
+      toast.success("Valor atualizado. Empresas devem clicar em Atualizar PIX para o novo valor.");
     } catch (e) {
       toast.error((e as Error).message ?? "Falha ao salvar");
     } finally {
@@ -92,7 +93,7 @@ function AdminConfiguracoesPage() {
     <div className="space-y-6 max-w-xl">
       <PageHeader
         title="Configurações"
-        description="Parâmetros globais — valor do plano e contato de suporte."
+        description="Plano, suporte e WhatsApp OTP (Evolution)."
       />
 
       {loading ? (
@@ -145,6 +146,8 @@ function AdminConfiguracoesPage() {
               </Button>
             </CardContent>
           </Card>
+
+          <AdminEvolutionSettings settings={settings} onUpdated={() => void load()} />
         </>
       )}
     </div>

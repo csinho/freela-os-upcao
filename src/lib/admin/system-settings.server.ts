@@ -33,18 +33,35 @@ export async function getBillingSettings(
     .eq("key", "admin")
     .maybeSingle();
 
-  const billingValue = (billingRow?.value ?? {}) as { plan_value_cents?: number };
-  const adminValue = (adminRow?.value ?? {}) as { contact_whatsapp?: string };
+  const { data: evolutionRow } = await sb
+    .from("system_settings")
+    .select("value")
+    .eq("key", "evolution")
+    .maybeSingle();
 
+  const billingValue = (billingRow?.value ?? {}) as { plan_value_cents?: number | string };
+  const adminValue = (adminRow?.value ?? {}) as { contact_whatsapp?: string };
+  const evolutionValue = (evolutionRow?.value ?? {}) as {
+    instance_name?: string;
+    connection_state?: string;
+    connected_at?: string | null;
+  };
+
+  const rawCents = billingValue.plan_value_cents;
   const planValueCents =
-    typeof billingValue.plan_value_cents === "number"
-      ? billingValue.plan_value_cents
-      : PLAN_VALUE_CENTS;
+    typeof rawCents === "number"
+      ? rawCents
+      : typeof rawCents === "string"
+        ? parseInt(rawCents, 10) || PLAN_VALUE_CENTS
+        : PLAN_VALUE_CENTS;
 
   return {
     planValueCents,
     planLabel: formatPlanLabel(planValueCents),
     contactWhatsapp: adminValue.contact_whatsapp ?? "",
+    evolutionInstanceName: evolutionValue.instance_name ?? "",
+    evolutionConnectionState: evolutionValue.connection_state ?? "unknown",
+    evolutionConnectedAt: evolutionValue.connected_at ?? null,
   };
 }
 
@@ -82,6 +99,14 @@ export async function saveAdminBillingPlan(
       fromCents: previous.planValueCents,
       toCents: newCents,
     });
+    // Invalida PIX pendentes — próximo "Gerar PIX" usará o novo valor.
+    await sb
+      .from("empresas")
+      .update({
+        woovi_charge_correlation_id: null,
+        woovi_payment_link_url: null,
+      })
+      .not("woovi_charge_correlation_id", "is", null);
   }
 
   return getBillingSettings(env);

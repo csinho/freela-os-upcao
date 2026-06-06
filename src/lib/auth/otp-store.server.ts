@@ -26,16 +26,15 @@ export async function saveOtp(
   const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
 
   const sb = getSupabaseServer(env);
-  const { error } = await sb.from("login_otp").upsert(
-    {
-      whatsapp,
-      purpose,
-      code_hash: codeHash,
-      expires_at: expiresAt,
-      created_at: new Date().toISOString(),
-    },
-    { onConflict: "whatsapp,purpose" },
-  );
+  await sb.from("login_otp").delete().eq("whatsapp", whatsapp).eq("purpose", purpose);
+
+  const { error } = await sb.from("login_otp").insert({
+    whatsapp,
+    purpose,
+    code_hash: codeHash,
+    expires_at: expiresAt,
+    created_at: new Date().toISOString(),
+  });
 
   if (error) throw new Error(error.message);
   return code;

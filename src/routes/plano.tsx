@@ -51,6 +51,16 @@ function PlanoPage() {
         <CardContent className="space-y-4">
           {!isLoading && billing && (
             <>
+              <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
+                Valor do plano: <strong>{billing.planLabel}</strong>
+                {billing.paymentLinkUrl && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    — clique em <strong>Atualizar PIX</strong> após mudança de preço pelo admin.
+                  </span>
+                )}
+              </div>
+
               {billing.phase === "trial" && (
                 <p className="text-sm">
                   Você está no trial gratuito até <strong>{formatDatePt(billing.trialEndsAt)}</strong> (

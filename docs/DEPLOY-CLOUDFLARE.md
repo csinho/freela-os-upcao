@@ -47,9 +47,15 @@ POST https://upservicos.com/api/webhooks/woovi
 | `SUPABASE_SERVICE_ROLE_KEY` | Sim | Billing / webhooks no servidor |
 | `WOOVI_APP_ID` | Sim | API Woovi |
 | `BILLING_CRON_SECRET` | Sim | Protege `/api/cron/billing` |
-| `ADMIN_WHATSAPP_ALLOWLIST` | Sim (admin) | Login do painel `/admin` — 11 dígitos, vírgula |
+| `ADMIN_WHATSAPP_ALLOWLIST` | Sim (admin) | Login em `/login` — 11 dígitos, vírgula |
+| `EVOLUTION_API_URL` | Sim (OTP) | URL base da Evolution (sem barra no final) |
+| `EVOLUTION_API_KEY` | Sim (OTP) | API key do painel Evolution |
+| `EVOLUTION_INSTANCE` | Sim (OTP) | Nome **exato** da instância conectada no Evolution |
+| `EVOLUTION_MOCK` | Opcional | `true` — OTP no toast, sem WhatsApp (só dev/teste) |
 
 Opcional: `WOOVI_WEBHOOK_AUTHORIZATION` — só se configurar header no painel Woovi.
+
+**Importante:** colocar no GitHub Secrets **não basta** — o workflow sincroniza no Worker a cada deploy. Sem `EVOLUTION_INSTANCE` no Worker, cadastro e login falham com *"Instância Evolution não configurada"*.
 
 **Variável pública** (não é secret): `PUBLIC_APP_URL` está em `wrangler.jsonc` → `vars.PUBLIC_APP_URL` (`https://upservicos.com`). Altere lá se o domínio mudar.
 

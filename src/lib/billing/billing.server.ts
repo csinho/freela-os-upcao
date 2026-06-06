@@ -154,7 +154,29 @@ export async function gerarPixPlano(empresaId: string, env?: Record<string, stri
   }
   try {
     const empresa = await fetchEmpresaBilling(empresaId, env);
-    const charge = await ensureWooviChargeForEmpresa(empresa, env);
+    // Sempre gera cobrança nova com valor atual do plano (system_settings).
+    await updateEmpresaBilling(
+      empresaId,
+      {
+        woovi_charge_correlation_id: null,
+        woovi_payment_link_url: null,
+      },
+      env,
+    );
+    const charge = await createWooviPlanCharge({
+      empresaId: empresa.id,
+      empresaNome: empresa.nome,
+      telefone: empresa.telefone,
+      env,
+    });
+    await updateEmpresaBilling(
+      empresaId,
+      {
+        woovi_charge_correlation_id: charge.correlationID,
+        woovi_payment_link_url: charge.paymentLinkUrl,
+      },
+      env,
+    );
     return { paymentLinkUrl: charge.paymentLinkUrl, correlationID: charge.correlationID };
   } catch (err) {
     throw new Error(mensagemErroPixParaEmpresa(err));

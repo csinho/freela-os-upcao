@@ -16,6 +16,11 @@ import {
   saveAdminBillingPlan,
   saveAdminContactWhatsapp,
 } from "@/lib/admin/system-settings.server";
+import {
+  getEvolutionQrAdmin,
+  refreshEvolutionConnectionAdmin,
+  saveEvolutionInstanceAdmin,
+} from "@/lib/evolution/admin.server";
 import { listarPagamentosPlano } from "@/lib/billing/payments.server";
 
 const adminWhatsappSchema = z.object({ adminWhatsapp: z.string().regex(/^\d{11}$/) });
@@ -119,6 +124,29 @@ export const saveAdminContactWhatsappRemote = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     assertFromInput(data.adminWhatsapp);
     return saveAdminContactWhatsapp(data.contactWhatsapp);
+  });
+
+export const saveEvolutionInstanceAdminRemote = createServerFn({ method: "POST" })
+  .inputValidator((data: { adminWhatsapp: string; instanceName: string }) =>
+    adminWhatsappSchema.extend({ instanceName: z.string().min(1) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    assertFromInput(data.adminWhatsapp);
+    return saveEvolutionInstanceAdmin(data.instanceName);
+  });
+
+export const getEvolutionQrAdminRemote = createServerFn({ method: "POST" })
+  .inputValidator((data: { adminWhatsapp: string }) => adminWhatsappSchema.parse(data))
+  .handler(async ({ data }) => {
+    assertFromInput(data.adminWhatsapp);
+    return getEvolutionQrAdmin();
+  });
+
+export const refreshEvolutionConnectionAdminRemote = createServerFn({ method: "POST" })
+  .inputValidator((data: { adminWhatsapp: string }) => adminWhatsappSchema.parse(data))
+  .handler(async ({ data }) => {
+    assertFromInput(data.adminWhatsapp);
+    return refreshEvolutionConnectionAdmin();
   });
 
 export const getAdminDashboardRemote = createServerFn({ method: "POST" })
