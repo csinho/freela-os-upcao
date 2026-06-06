@@ -11,8 +11,14 @@ import type {
   StatusOrcamento,
   UnidadeServico,
 } from "./types";
-import { parseRedesSociais, serializeRedesSociais } from "./types";
-import { calcDescontoValor, calcSubtotal, calcTotal } from "./types";
+import {
+  calcDescontoValor,
+  calcSubtotal,
+  calcTotal,
+  normalizeGarantiaUnidade,
+  parseRedesSociais,
+  serializeRedesSociais,
+} from "./types";
 
 function err<T>(data: T | null, error: { message: string } | null): T {
   if (error) throw new Error(error.message);
@@ -184,6 +190,9 @@ function mapOrcamento(r: any): Orcamento {
     forma_pagamento: r.forma_pagamento ?? undefined,
     prazo_entrega: r.prazo_entrega ?? undefined,
     validade: r.validade ?? undefined,
+    garantia_quantidade:
+      r.garantia_quantidade != null ? Number(r.garantia_quantidade) : undefined,
+    garantia_unidade: normalizeGarantiaUnidade(r.garantia_unidade as string | null),
     observacoes: r.observacoes ?? undefined,
     condicoes: r.condicoes ?? undefined,
     data_criacao: r.data_criacao,
@@ -248,6 +257,8 @@ export const orcamentosRepo = {
       forma_pagamento: o.forma_pagamento ?? null,
       prazo_entrega: o.prazo_entrega ?? null,
       validade: o.validade ?? null,
+      garantia_quantidade: o.garantia_quantidade ?? null,
+      garantia_unidade: o.garantia_unidade ?? null,
       observacoes: o.observacoes ?? null,
       condicoes: o.condicoes ?? null,
       data_criacao: o.data_criacao,

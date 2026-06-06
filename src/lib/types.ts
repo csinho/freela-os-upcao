@@ -26,6 +26,51 @@ export type StatusFinanceiro = "pendente" | "pago" | "atrasado" | "parcial";
 export type TipoFinanceiro = "pagar" | "receber";
 export type UnidadeServico = "serviço" | "hora" | "mensalidade" | "pacote";
 
+export const FORMAS_PAGAMENTO = ["Pix", "Débito", "Crédito"] as const;
+export type FormaPagamento = (typeof FORMAS_PAGAMENTO)[number];
+
+export type GarantiaUnidade = "dia" | "semana" | "mes" | "ano";
+
+export const GARANTIA_UNIDADES: GarantiaUnidade[] = ["dia", "semana", "mes", "ano"];
+
+const GARANTIA_FORMS: Record<GarantiaUnidade, [singular: string, plural: string]> = {
+  dia: ["dia", "dias"],
+  semana: ["semana", "semanas"],
+  mes: ["mês", "meses"],
+  ano: ["ano", "anos"],
+};
+
+/** Aceita valores legados (dias, semanas…) gravados antes da normalização. */
+export function normalizeGarantiaUnidade(raw?: string | null): GarantiaUnidade | undefined {
+  if (!raw) return undefined;
+  const map: Record<string, GarantiaUnidade> = {
+    dia: "dia",
+    dias: "dia",
+    semana: "semana",
+    semanas: "semana",
+    mes: "mes",
+    mês: "mes",
+    meses: "mes",
+    ano: "ano",
+    anos: "ano",
+  };
+  return map[raw.toLowerCase()] ?? map[raw];
+}
+
+export function garantiaUnidadeLabel(unidade: GarantiaUnidade, quantidade: number): string {
+  const q = Math.max(0, Math.floor(quantidade));
+  const [singular, plural] = GARANTIA_FORMS[unidade];
+  return q === 1 ? singular : plural;
+}
+
+export function formatGarantia(
+  quantidade?: number,
+  unidade?: GarantiaUnidade,
+): string | undefined {
+  if (quantidade == null || quantidade <= 0 || !unidade) return undefined;
+  return `${quantidade} ${garantiaUnidadeLabel(unidade, quantidade)}`;
+}
+
 export interface Endereco {
   rua?: string;
   numero?: string;
@@ -147,6 +192,8 @@ export interface Orcamento {
   forma_pagamento?: string;
   prazo_entrega?: string;
   validade?: string;
+  garantia_quantidade?: number;
+  garantia_unidade?: GarantiaUnidade;
   observacoes?: string;
   condicoes?: string;
   data_criacao: string;
@@ -219,6 +266,23 @@ export function isoToDateInput(iso?: string): string {
   if (!parts) return "";
   const { y, m, d } = parts;
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** Data de hoje no formato `<input type="date">` (fuso local). */
+export function todayDateInput(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+/** Retorna vazio se a data for anterior a hoje (bloqueio de retroativo). */
+export function dateInputFromTodayOrEmpty(iso?: string): string {
+  const value = isoToDateInput(iso);
+  if (!value) return "";
+  return value < todayDateInput() ? "" : value;
+}
+
+export function isDateInputOnOrAfterToday(dateStr: string): boolean {
+  return dateStr >= todayDateInput();
 }
 
 /** Datas “só dia” (validade, prazo) — sem perder um dia por UTC. */

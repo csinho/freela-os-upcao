@@ -15,6 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MobileCard } from "@/components/mobile/mobile-card";
+import { MobilePagination } from "@/components/mobile/mobile-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 function formatBRLCents(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -74,6 +77,8 @@ export function EmpresaPlanoPagamentosList() {
     }
   };
 
+  const pagination = usePagination(items, 10, `${dateFrom}-${dateTo}-${items.length}`);
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3 items-end">
@@ -95,42 +100,80 @@ export function EmpresaPlanoPagamentosList() {
       ) : items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Comprovante</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>{formatDatePt(p.paidAt)}</TableCell>
-                <TableCell>{formatBRLCents(p.valueCents)}</TableCell>
-                <TableCell>
-                  <Badge variant={p.status === "pago" ? "default" : "secondary"}>{p.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
+        <>
+          <div className="md:hidden space-y-3">
+            {pagination.pageItems.map((p) => (
+              <MobileCard key={p.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">{formatBRLCents(p.valueCents)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatDatePt(p.paidAt)}</p>
+                    <Badge variant={p.status === "pago" ? "default" : "secondary"} className="mt-2 text-[10px]">
+                      {p.status}
+                    </Badge>
+                  </div>
                   {p.status === "pago" ? (
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
+                      className="rounded-xl"
                       disabled={downloadingId === p.id}
                       onClick={() => void onDownload(p.id)}
                     >
                       PDF
                     </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-              </TableRow>
+                  ) : null}
+                </div>
+              </MobileCard>
             ))}
-          </TableBody>
-        </Table>
+            <MobilePagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              hasPrev={pagination.hasPrev}
+              hasNext={pagination.hasNext}
+              onPrev={pagination.goPrev}
+              onNext={pagination.goNext}
+            />
+          </div>
+          <Table className="hidden md:table">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Valor</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Comprovante</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>{formatDatePt(p.paidAt)}</TableCell>
+                  <TableCell>{formatBRLCents(p.valueCents)}</TableCell>
+                  <TableCell>
+                    <Badge variant={p.status === "pago" ? "default" : "secondary"}>{p.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {p.status === "pago" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={downloadingId === p.id}
+                        onClick={() => void onDownload(p.id)}
+                      >
+                        PDF
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
       )}
     </div>
   );

@@ -12,6 +12,8 @@ import {
 import type { StatusOrcamento } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MobileCard } from "@/components/mobile/mobile-card";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: pageTitle("Dashboard") }] }),
@@ -58,48 +60,86 @@ function Dashboard() {
       label: "Em orçamento",
       value: formatBRL(totaisPorStatus.orcamento?.total || 0),
       sub: `${totaisPorStatus.orcamento?.count || 0} propostas`,
+      accent: "sky",
     },
     {
       label: "Em produção",
       value: formatBRL(totaisPorStatus.em_producao?.total || 0),
       sub: `${totaisPorStatus.em_producao?.count || 0} projetos`,
+      accent: "amber",
     },
     {
       label: "Entregue",
       value: formatBRL(totaisPorStatus.entregue?.total || 0),
       sub: `${totaisPorStatus.entregue?.count || 0} projetos`,
+      accent: "emerald",
     },
-    { label: "A receber", value: formatBRL(aReceber), sub: "pendente + atrasado" },
-    { label: "Recebido", value: formatBRL(recebido), sub: "total quitado" },
-    { label: "A pagar", value: formatBRL(aPagar), sub: "contas pendentes" },
+    { label: "A receber", value: formatBRL(aReceber), sub: "pendente + atrasado", accent: "blue" },
+    { label: "Recebido", value: formatBRL(recebido), sub: "total quitado", accent: "green" },
+    { label: "A pagar", value: formatBRL(aPagar), sub: "contas pendentes", accent: "rose" },
   ];
+
+  const accentBg: Record<string, string> = {
+    sky: "from-sky-500/10 to-transparent border-sky-200/60",
+    amber: "from-amber-500/10 to-transparent border-amber-200/60",
+    emerald: "from-emerald-500/10 to-transparent border-emerald-200/60",
+    blue: "from-blue-500/10 to-transparent border-blue-200/60",
+    green: "from-green-500/10 to-transparent border-green-200/60",
+    rose: "from-rose-500/10 to-transparent border-rose-200/60",
+  };
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="hidden md:block">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
           {lo || lf ? "Carregando…" : "Visão geral dos projetos e finanças."}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Mobile hero resumo */}
+      <MobileCard accent="primary" className="md:hidden bg-gradient-to-br from-primary/8 to-transparent">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Resumo financeiro
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">A receber</p>
+            <p className="text-xl font-bold tabular-nums">{formatBRL(aReceber)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Recebido</p>
+            <p className="text-xl font-bold tabular-nums text-emerald-700">{formatBRL(recebido)}</p>
+          </div>
+        </div>
+      </MobileCard>
+
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {cards.map((c) => (
-          <Card key={c.label}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
+          <Card
+            key={c.label}
+            className={cn(
+              "overflow-hidden",
+              "md:shadow-sm",
+              `md:bg-card bg-gradient-to-br ${accentBg[c.accent]} md:bg-none md:border-border`,
+            )}
+          >
+            <CardHeader className="pb-1 md:pb-2 p-4 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
+                {c.label}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold">{c.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{c.sub}</div>
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+              <div className="text-lg md:text-2xl font-bold tabular-nums">{c.value}</div>
+              <div className="text-[11px] md:text-xs text-muted-foreground mt-1">{c.sub}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
+        <Card className="md:shadow-sm border-0 md:border shadow-sm rounded-2xl md:rounded-lg">
+          <CardHeader className="pb-3">
             <CardTitle className="text-base">Últimos orçamentos e pedidos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -111,7 +151,7 @@ function Dashboard() {
                 key={o.id}
                 to="/orcamentos/$id"
                 params={{ id: o.id }}
-                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border p-3 hover:bg-accent"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl md:rounded-md border p-3.5 md:p-3 hover:bg-accent active:bg-muted/50 transition-colors"
               >
                 <div className="min-w-0">
                   <div className="font-medium text-sm">{o.nome_projeto}</div>
@@ -121,7 +161,7 @@ function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:shrink-0">
-                  <div className="text-sm font-medium">{formatBRL(calcTotal(o))}</div>
+                  <div className="text-sm font-semibold tabular-nums">{formatBRL(calcTotal(o))}</div>
                   <Badge variant="secondary" className="text-[10px]">
                     {STATUS_LABEL[o.status as StatusOrcamento]}
                   </Badge>
@@ -131,8 +171,8 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="md:shadow-sm border-0 md:border shadow-sm rounded-2xl md:rounded-lg">
+          <CardHeader className="pb-3">
             <CardTitle className="text-base">Próximos vencimentos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -142,7 +182,7 @@ function Dashboard() {
             {proximosVenc.map((f) => (
               <div
                 key={f.id}
-                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border p-3"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl md:rounded-md border p-3.5 md:p-3"
               >
                 <div className="min-w-0">
                   <div className="font-medium text-sm">{f.descricao}</div>
@@ -152,7 +192,7 @@ function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:shrink-0">
-                  <div className="text-sm font-medium">{formatBRL(f.valor)}</div>
+                  <div className="text-sm font-semibold tabular-nums">{formatBRL(f.valor)}</div>
                   <Badge
                     variant={f.status === "atrasado" ? "destructive" : "secondary"}
                     className="text-[10px]"

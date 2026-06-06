@@ -16,6 +16,7 @@ import {
   calcSubtotal,
   calcTotal,
   formatBRL,
+  formatGarantia,
   formatCalendarDate,
   formatDate,
   formatPercentLabel,
@@ -297,6 +298,15 @@ export function buildOrcamentoPdfDoc(
             { text: orcamento.condicoes || "—", fontSize: 8 },
             ...(orcamento.forma_pagamento
               ? [{ text: `Pagamento: ${orcamento.forma_pagamento}`, style: "small", margin: [0, 4, 0, 0] }]
+              : []),
+            ...(formatGarantia(orcamento.garantia_quantidade, orcamento.garantia_unidade)
+              ? [
+                  {
+                    text: `Garantia: ${formatGarantia(orcamento.garantia_quantidade, orcamento.garantia_unidade)}`,
+                    style: "small",
+                    margin: [0, 4, 0, 0],
+                  },
+                ]
               : []),
             ...(empresa.dados_bancarios ? [{ text: empresa.dados_bancarios, style: "small" }] : []),
           ]),

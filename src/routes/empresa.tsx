@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MobileFormFooter } from "@/components/mobile/mobile-form-footer";
 
 export const Route = createFileRoute("/empresa")({
   head: () => ({ meta: [{ title: pageTitle("Empresa") }] }),
@@ -158,7 +159,7 @@ function EmpresaPage() {
   if (isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
 
   return (
-    <div className="space-y-4 max-w-4xl">
+    <div className="space-y-4 max-w-4xl pb-24 md:pb-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold sm:text-2xl">Dados da empresa</h1>
@@ -446,11 +447,17 @@ function EmpresaPage() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
+      <div className="hidden md:flex justify-end">
         <Button onClick={onSalvar} disabled={save.isPending}>
           Salvar alterações
         </Button>
       </div>
+
+      <MobileFormFooter
+        label="Salvar alterações"
+        onSave={onSalvar}
+        loading={save.isPending}
+      />
     </div>
   );
 }

@@ -65,7 +65,7 @@ export const moverOrcamentoComBillingRemote = createServerFn({ method: "POST" })
     if (data.status === "em_producao") {
       await assertBillingAllowsMutation(resolveEmpresaId(data.empresaId));
     }
-    await moverOrcamentoServer(data.id, data.status);
+    await moverOrcamentoServer(data.id, data.status, resolveEmpresaId(data.empresaId));
     return { ok: true };
   });
 

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as PlanoRouteImport } from './routes/plano'
+import { Route as MenuRouteImport } from './routes/menu'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KanbanRouteImport } from './routes/kanban'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
@@ -21,7 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrcamentosIndexRouteImport } from './routes/orcamentos.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SetupWhatsappRouteImport } from './routes/setup.whatsapp'
+import { Route as ServicosNovoRouteImport } from './routes/servicos.novo'
+import { Route as ServicosServicoIdRouteImport } from './routes/servicos.$servicoId'
 import { Route as OrcamentosIdRouteImport } from './routes/orcamentos.$id'
+import { Route as ClientesNovoRouteImport } from './routes/clientes.novo'
+import { Route as ClientesClienteIdRouteImport } from './routes/clientes.$clienteId'
 import { Route as CadastroEmpresaRouteImport } from './routes/cadastro.empresa'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
@@ -39,6 +44,11 @@ const ServicosRoute = ServicosRouteImport.update({
 const PlanoRoute = PlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenuRoute = MenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -91,10 +101,30 @@ const SetupWhatsappRoute = SetupWhatsappRouteImport.update({
   path: '/setup/whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServicosNovoRoute = ServicosNovoRouteImport.update({
+  id: '/novo',
+  path: '/novo',
+  getParentRoute: () => ServicosRoute,
+} as any)
+const ServicosServicoIdRoute = ServicosServicoIdRouteImport.update({
+  id: '/$servicoId',
+  path: '/$servicoId',
+  getParentRoute: () => ServicosRoute,
+} as any)
 const OrcamentosIdRoute = OrcamentosIdRouteImport.update({
   id: '/orcamentos/$id',
   path: '/orcamentos/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ClientesNovoRoute = ClientesNovoRouteImport.update({
+  id: '/novo',
+  path: '/novo',
+  getParentRoute: () => ClientesRoute,
+} as any)
+const ClientesClienteIdRoute = ClientesClienteIdRouteImport.update({
+  id: '/$clienteId',
+  path: '/$clienteId',
+  getParentRoute: () => ClientesRoute,
 } as any)
 const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
   id: '/cadastro/empresa',
@@ -140,18 +170,23 @@ const AdminEmpresasEmpresaIdRoute = AdminEmpresasEmpresaIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/clientes': typeof ClientesRoute
+  '/clientes': typeof ClientesRouteWithChildren
   '/empresa': typeof EmpresaRoute
   '/financeiro': typeof FinanceiroRoute
   '/kanban': typeof KanbanRoute
   '/login': typeof LoginRoute
+  '/menu': typeof MenuRoute
   '/plano': typeof PlanoRoute
-  '/servicos': typeof ServicosRoute
+  '/servicos': typeof ServicosRouteWithChildren
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
+  '/clientes/$clienteId': typeof ClientesClienteIdRoute
+  '/clientes/novo': typeof ClientesNovoRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
+  '/servicos/$servicoId': typeof ServicosServicoIdRoute
+  '/servicos/novo': typeof ServicosNovoRoute
   '/setup/whatsapp': typeof SetupWhatsappRoute
   '/admin/': typeof AdminIndexRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
@@ -162,18 +197,23 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/clientes': typeof ClientesRoute
+  '/clientes': typeof ClientesRouteWithChildren
   '/empresa': typeof EmpresaRoute
   '/financeiro': typeof FinanceiroRoute
   '/kanban': typeof KanbanRoute
   '/login': typeof LoginRoute
+  '/menu': typeof MenuRoute
   '/plano': typeof PlanoRoute
-  '/servicos': typeof ServicosRoute
+  '/servicos': typeof ServicosRouteWithChildren
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
+  '/clientes/$clienteId': typeof ClientesClienteIdRoute
+  '/clientes/novo': typeof ClientesNovoRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
+  '/servicos/$servicoId': typeof ServicosServicoIdRoute
+  '/servicos/novo': typeof ServicosNovoRoute
   '/setup/whatsapp': typeof SetupWhatsappRoute
   '/admin': typeof AdminIndexRoute
   '/orcamentos': typeof OrcamentosIndexRoute
@@ -186,18 +226,23 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/clientes': typeof ClientesRoute
+  '/clientes': typeof ClientesRouteWithChildren
   '/empresa': typeof EmpresaRoute
   '/financeiro': typeof FinanceiroRoute
   '/kanban': typeof KanbanRoute
   '/login': typeof LoginRoute
+  '/menu': typeof MenuRoute
   '/plano': typeof PlanoRoute
-  '/servicos': typeof ServicosRoute
+  '/servicos': typeof ServicosRouteWithChildren
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
   '/cadastro/empresa': typeof CadastroEmpresaRoute
+  '/clientes/$clienteId': typeof ClientesClienteIdRoute
+  '/clientes/novo': typeof ClientesNovoRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
+  '/servicos/$servicoId': typeof ServicosServicoIdRoute
+  '/servicos/novo': typeof ServicosNovoRoute
   '/setup/whatsapp': typeof SetupWhatsappRoute
   '/admin/': typeof AdminIndexRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
@@ -216,13 +261,18 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/kanban'
     | '/login'
+    | '/menu'
     | '/plano'
     | '/servicos'
     | '/admin/configuracoes'
     | '/admin/dashboard'
     | '/admin/login'
     | '/cadastro/empresa'
+    | '/clientes/$clienteId'
+    | '/clientes/novo'
     | '/orcamentos/$id'
+    | '/servicos/$servicoId'
+    | '/servicos/novo'
     | '/setup/whatsapp'
     | '/admin/'
     | '/orcamentos/'
@@ -238,13 +288,18 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/kanban'
     | '/login'
+    | '/menu'
     | '/plano'
     | '/servicos'
     | '/admin/configuracoes'
     | '/admin/dashboard'
     | '/admin/login'
     | '/cadastro/empresa'
+    | '/clientes/$clienteId'
+    | '/clientes/novo'
     | '/orcamentos/$id'
+    | '/servicos/$servicoId'
+    | '/servicos/novo'
     | '/setup/whatsapp'
     | '/admin'
     | '/orcamentos'
@@ -261,13 +316,18 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/kanban'
     | '/login'
+    | '/menu'
     | '/plano'
     | '/servicos'
     | '/admin/configuracoes'
     | '/admin/dashboard'
     | '/admin/login'
     | '/cadastro/empresa'
+    | '/clientes/$clienteId'
+    | '/clientes/novo'
     | '/orcamentos/$id'
+    | '/servicos/$servicoId'
+    | '/servicos/novo'
     | '/setup/whatsapp'
     | '/admin/'
     | '/orcamentos/'
@@ -280,13 +340,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  ClientesRoute: typeof ClientesRoute
+  ClientesRoute: typeof ClientesRouteWithChildren
   EmpresaRoute: typeof EmpresaRoute
   FinanceiroRoute: typeof FinanceiroRoute
   KanbanRoute: typeof KanbanRoute
   LoginRoute: typeof LoginRoute
+  MenuRoute: typeof MenuRoute
   PlanoRoute: typeof PlanoRoute
-  ServicosRoute: typeof ServicosRoute
+  ServicosRoute: typeof ServicosRouteWithChildren
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   OrcamentosIdRoute: typeof OrcamentosIdRoute
   SetupWhatsappRoute: typeof SetupWhatsappRoute
@@ -309,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/plano'
       fullPath: '/plano'
       preLoaderRoute: typeof PlanoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/menu': {
+      id: '/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof MenuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -381,12 +449,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servicos/novo': {
+      id: '/servicos/novo'
+      path: '/novo'
+      fullPath: '/servicos/novo'
+      preLoaderRoute: typeof ServicosNovoRouteImport
+      parentRoute: typeof ServicosRoute
+    }
+    '/servicos/$servicoId': {
+      id: '/servicos/$servicoId'
+      path: '/$servicoId'
+      fullPath: '/servicos/$servicoId'
+      preLoaderRoute: typeof ServicosServicoIdRouteImport
+      parentRoute: typeof ServicosRoute
+    }
     '/orcamentos/$id': {
       id: '/orcamentos/$id'
       path: '/orcamentos/$id'
       fullPath: '/orcamentos/$id'
       preLoaderRoute: typeof OrcamentosIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/clientes/novo': {
+      id: '/clientes/novo'
+      path: '/novo'
+      fullPath: '/clientes/novo'
+      preLoaderRoute: typeof ClientesNovoRouteImport
+      parentRoute: typeof ClientesRoute
+    }
+    '/clientes/$clienteId': {
+      id: '/clientes/$clienteId'
+      path: '/$clienteId'
+      fullPath: '/clientes/$clienteId'
+      preLoaderRoute: typeof ClientesClienteIdRouteImport
+      parentRoute: typeof ClientesRoute
     }
     '/cadastro/empresa': {
       id: '/cadastro/empresa'
@@ -467,16 +563,45 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ClientesRouteChildren {
+  ClientesClienteIdRoute: typeof ClientesClienteIdRoute
+  ClientesNovoRoute: typeof ClientesNovoRoute
+}
+
+const ClientesRouteChildren: ClientesRouteChildren = {
+  ClientesClienteIdRoute: ClientesClienteIdRoute,
+  ClientesNovoRoute: ClientesNovoRoute,
+}
+
+const ClientesRouteWithChildren = ClientesRoute._addFileChildren(
+  ClientesRouteChildren,
+)
+
+interface ServicosRouteChildren {
+  ServicosServicoIdRoute: typeof ServicosServicoIdRoute
+  ServicosNovoRoute: typeof ServicosNovoRoute
+}
+
+const ServicosRouteChildren: ServicosRouteChildren = {
+  ServicosServicoIdRoute: ServicosServicoIdRoute,
+  ServicosNovoRoute: ServicosNovoRoute,
+}
+
+const ServicosRouteWithChildren = ServicosRoute._addFileChildren(
+  ServicosRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  ClientesRoute: ClientesRoute,
+  ClientesRoute: ClientesRouteWithChildren,
   EmpresaRoute: EmpresaRoute,
   FinanceiroRoute: FinanceiroRoute,
   KanbanRoute: KanbanRoute,
   LoginRoute: LoginRoute,
+  MenuRoute: MenuRoute,
   PlanoRoute: PlanoRoute,
-  ServicosRoute: ServicosRoute,
+  ServicosRoute: ServicosRouteWithChildren,
   CadastroEmpresaRoute: CadastroEmpresaRoute,
   OrcamentosIdRoute: OrcamentosIdRoute,
   SetupWhatsappRoute: SetupWhatsappRoute,

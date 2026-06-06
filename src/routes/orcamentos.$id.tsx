@@ -19,13 +19,20 @@ import {
   calcTotal,
   formatBRL,
   formatPercentLabel,
+  dateInputFromTodayOrEmpty,
   dateInputToIso,
+  garantiaUnidadeLabel,
+  isDateInputOnOrAfterToday,
   isoToDateInput,
   labelDocumento,
+  todayDateInput,
   STATUS_LABEL,
   STATUS_ORDER,
+  FORMAS_PAGAMENTO,
+  GARANTIA_UNIDADES,
+  type GarantiaUnidade,
 } from "@/lib/types";
-import { formatPercentInput, maskPercent, parsePercent } from "@/lib/validators";
+import { formatPercentInput, maskPercent, onlyDigits, parsePercent } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +46,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Download, Eye } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { MobileFormFooter } from "@/components/mobile/mobile-form-footer";
+import { ServicoCatalogoPicker } from "@/components/orcamentos/servico-catalogo-picker";
 
 type PdfProps = { orcamento: Orcamento; empresa: Empresa; cliente?: Cliente };
 
@@ -83,6 +98,13 @@ function OrcamentoDetail() {
   const [preview, setPreview] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [itemToRemove, setItemToRemove] = useState<number | null>(null);
+  const [servicoSelecionado, setServicoSelecionado] = useState("");
+  const [servicoSelectKey, setServicoSelectKey] = useState(0);
+  const [dataMinima, setDataMinima] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    setDataMinima(todayDateInput());
+  }, []);
 
   useEffect(() => {
     if (original) {
@@ -114,6 +136,7 @@ function OrcamentoDetail() {
   const subtotal = calcSubtotal(o.itens);
   const descontoValor = calcDescontoValor(subtotal, o.desconto_percentual);
   const total = calcTotal(o);
+  const servicoCatalogoSelecionado = servicos.find((s) => s.id === servicoSelecionado) ?? null;
 
   const addItem = (servicoId?: string) => {
     const sv = servicos.find((s) => s.id === servicoId);
@@ -134,6 +157,13 @@ function OrcamentoDetail() {
         ),
       ],
     });
+  };
+
+  const addServicoSelecionado = () => {
+    if (!servicoSelecionado) return;
+    addItem(servicoSelecionado);
+    setServicoSelecionado("");
+    setServicoSelectKey((k) => k + 1);
   };
 
   const updateItem = (i: number, patch: Partial<OrcamentoItem>) => {
@@ -164,8 +194,14 @@ function OrcamentoDetail() {
       },
     });
 
+  const onStatusChange = (v: string) => {
+    const status = v as StatusOrcamento;
+    setO({ ...o, status });
+    move.mutate({ id: o.id, status });
+  };
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-24 md:pb-0">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3 min-w-0">
           <Button
@@ -185,26 +221,7 @@ function OrcamentoDetail() {
             </h1>
           </div>
         </div>
-        <div className="flex flex-col gap-2 w-full md:flex-row md:flex-wrap md:items-center md:justify-end md:w-auto">
-          <Select
-            value={o.status}
-            onValueChange={(v) => {
-              const status = v as StatusOrcamento;
-              setO({ ...o, status });
-              move.mutate({ id: o.id, status });
-            }}
-          >
-            <SelectTrigger className="w-full md:w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_ORDER.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="hidden md:flex flex-col gap-2 w-full md:flex-row md:flex-wrap md:items-center md:justify-end md:w-auto">
           <Button className="w-full md:w-auto" onClick={saveAndExit} disabled={upsert.isPending}>
             {upsert.isPending ? "Salvando…" : "Salvar"}
           </Button>
@@ -218,8 +235,7 @@ function OrcamentoDetail() {
               }}
             >
               <Eye className="h-4 w-4 mr-1 shrink-0" />
-              <span className="truncate md:hidden">Visualizar</span>
-              <span className="hidden md:inline">Visualizar PDF</span>
+              Visualizar PDF
             </Button>
             <div className="w-full [&_button]:w-full">
               <ClientOnlyPDF
@@ -233,8 +249,54 @@ function OrcamentoDetail() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-2 gap-2 md:hidden">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 rounded-xl"
+          onClick={() => {
+            save();
+            setPreview(true);
+          }}
+        >
+          <Eye className="h-4 w-4 mr-1 shrink-0" />
+          Visualizar PDF
+        </Button>
+        <div className="[&_button]:w-full [&_button]:h-11 [&_button]:rounded-xl">
+          <ClientOnlyPDF
+            kind="download"
+            orcamento={o}
+            empresa={empresa}
+            cliente={clientes.find((c) => c.id === o.cliente_id)}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="orcamento-status">Etapa do projeto</Label>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Define em qual fase está este trabalho. Em <strong>Orçamento</strong> ele ainda é uma
+            proposta; ao passar para <strong>Em produção</strong> vira pedido e o sistema pode gerar
+            lançamentos no financeiro. Use <strong>Vistoria</strong> e <strong>Entregue</strong> para
+            acompanhar a conclusão do serviço.
+          </p>
+        </div>
+        <Select value={o.status} onValueChange={onStatusChange}>
+          <SelectTrigger id="orcamento-status" className="w-full h-11 rounded-xl md:rounded-md md:max-w-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_ORDER.map((s) => (
+              <SelectItem key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Card>
           <CardHeader>
             <CardTitle className="text-base">Dados do projeto</CardTitle>
           </CardHeader>
@@ -251,7 +313,10 @@ function OrcamentoDetail() {
                 </div>
                 <div className="space-y-1.5 lg:col-span-2">
                   <Label>Cliente</Label>
-                  <Select value={o.cliente_id} onValueChange={(v) => setO({ ...o, cliente_id: v })}>
+                  <Select
+                    value={o.cliente_id ?? ""}
+                    onValueChange={(v) => setO({ ...o, cliente_id: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
@@ -276,119 +341,135 @@ function OrcamentoDetail() {
             </div>
             <div className="border-t pt-5 space-y-4">
               <p className="text-sm font-medium text-muted-foreground">Prazos e pagamento</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5 md:col-span-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-1.5">
                   <Label>Forma de pagamento</Label>
-                  <Input
-                    value={o.forma_pagamento || ""}
-                    onChange={(e) => setO({ ...o, forma_pagamento: e.target.value })}
-                  />
+                  <Select
+                    value={o.forma_pagamento ?? ""}
+                    onValueChange={(v) => setO({ ...o, forma_pagamento: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORMAS_PAGAMENTO.map((fp) => (
+                        <SelectItem key={fp} value={fp}>
+                          {fp}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Prazo de entrega</Label>
                   <Input
                     type="date"
-                    value={isoToDateInput(o.prazo_entrega)}
-                    onChange={(e) =>
-                      setO({
-                        ...o,
-                        prazo_entrega: e.target.value ? dateInputToIso(e.target.value) : undefined,
-                      })
-                    }
+                    min={dataMinima}
+                    value={dateInputFromTodayOrEmpty(o.prazo_entrega)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (!v) {
+                        setO({ ...o, prazo_entrega: undefined });
+                        return;
+                      }
+                      if (!isDateInputOnOrAfterToday(v)) return;
+                      setO({ ...o, prazo_entrega: dateInputToIso(v) });
+                    }}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Validade da proposta</Label>
                   <Input
                     type="date"
-                    value={isoToDateInput(o.validade)}
-                    onChange={(e) =>
-                      setO({
-                        ...o,
-                        validade: e.target.value ? dateInputToIso(e.target.value) : undefined,
-                      })
-                    }
+                    min={dataMinima}
+                    value={dateInputFromTodayOrEmpty(o.validade)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (!v) {
+                        setO({ ...o, validade: undefined });
+                        return;
+                      }
+                      if (!isDateInputOnOrAfterToday(v)) return;
+                      setO({ ...o, validade: dateInputToIso(v) });
+                    }}
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Garantia</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      className="w-20 shrink-0"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={o.garantia_quantidade ?? ""}
+                      onChange={(e) => {
+                        const digits = onlyDigits(e.target.value);
+                        setO({
+                          ...o,
+                          garantia_quantidade: digits ? parseInt(digits, 10) : undefined,
+                          garantia_unidade: digits ? o.garantia_unidade ?? "dia" : o.garantia_unidade,
+                        });
+                      }}
+                    />
+                    <Select
+                      value={o.garantia_unidade ?? "dia"}
+                      onValueChange={(v) =>
+                        setO({ ...o, garantia_unidade: v as GarantiaUnidade })
+                      }
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue>
+                          {garantiaUnidadeLabel(
+                            o.garantia_unidade ?? "dia",
+                            o.garantia_quantidade ?? 2,
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GARANTIA_UNIDADES.map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {garantiaUnidadeLabel(u, o.garantia_quantidade ?? 2)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Totais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span>Subtotal</span>
-              <span>{formatBRL(subtotal)}</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-2">
-                <Label className="md:w-24 shrink-0">Desconto</Label>
-                <Input
-                  inputMode="numeric"
-                  placeholder="0%"
-                  className="font-mono"
-                  value={formatPercentInput(o.desconto_percentual)}
-                  onChange={(e) => {
-                    const masked = maskPercent(e.target.value);
-                    setO({ ...o, desconto_percentual: parsePercent(masked) });
-                  }}
-                />
-              </div>
-              {o.desconto_percentual > 0 && (
-                <p className="text-xs text-muted-foreground text-right">
-                  {formatPercentLabel(o.desconto_percentual)} do subtotal = −{" "}
-                  {formatBRL(descontoValor)}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-2">
-              <Label className="md:w-24 shrink-0">Acréscimo</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={o.acrescimo}
-                onChange={(e) => setO({ ...o, acrescimo: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <div className="border-t pt-3 flex justify-between text-lg font-semibold">
-              <span>Total</span>
-              <span>{formatBRL(total)}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between space-y-0">
+        <CardHeader className="space-y-3">
           <CardTitle className="text-base">Itens</CardTitle>
-          <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row">
-            <Select onValueChange={(v) => addItem(v)}>
-              <SelectTrigger className="w-full sm:w-56">
-                <SelectValue placeholder="Adicionar do catálogo" />
-              </SelectTrigger>
-              <SelectContent>
-                {servicos
-                  .filter((s) => s.ativo)
-                  .map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+          <ServicoCatalogoPicker
+            servicos={servicos}
+            value={servicoSelecionado}
+            onValueChange={setServicoSelecionado}
+            resetKey={servicoSelectKey}
+          >
+            {servicoSelecionado && (
+              <Button
+                type="button"
+                size="sm"
+                className="w-full shrink-0 md:w-auto"
+                onClick={addServicoSelecionado}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar ao orçamento
+                {servicoCatalogoSelecionado ? ` — ${servicoCatalogoSelecionado.nome}` : ""}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
-              className="w-full sm:w-auto"
+              className="w-full shrink-0 md:w-auto"
               onClick={() => addItem()}
             >
               <Plus className="h-4 w-4 mr-1" /> Item em branco
             </Button>
-          </div>
+          </ServicoCatalogoPicker>
         </CardHeader>
         <CardContent>
           {o.itens.length === 0 && <p className="text-sm text-muted-foreground">Nenhum item.</p>}
@@ -481,29 +562,76 @@ function OrcamentoDetail() {
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-4">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="flex flex-col min-h-0">
           <CardHeader>
             <CardTitle className="text-base">Condições comerciais</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <Textarea
+              className="min-h-[10rem] lg:min-h-[12rem]"
               rows={6}
               value={o.condicoes || ""}
               onChange={(e) => setO({ ...o, condicoes: e.target.value })}
             />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="flex flex-col min-h-0">
           <CardHeader>
             <CardTitle className="text-base">Observações</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <Textarea
+              className="min-h-[10rem] lg:min-h-[12rem]"
               rows={6}
               value={o.observacoes || ""}
               onChange={(e) => setO({ ...o, observacoes: e.target.value })}
             />
+          </CardContent>
+        </Card>
+        <Card className="flex flex-col min-h-0">
+          <CardHeader>
+            <CardTitle className="text-base">Totais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 flex-1">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>{formatBRL(subtotal)}</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+                <Label className="sm:w-20 shrink-0">Desconto</Label>
+                <Input
+                  inputMode="numeric"
+                  placeholder="0%"
+                  className="font-mono"
+                  value={formatPercentInput(o.desconto_percentual)}
+                  onChange={(e) => {
+                    const masked = maskPercent(e.target.value);
+                    setO({ ...o, desconto_percentual: parsePercent(masked) });
+                  }}
+                />
+              </div>
+              {o.desconto_percentual > 0 && (
+                <p className="text-xs text-muted-foreground text-right">
+                  {formatPercentLabel(o.desconto_percentual)} do subtotal = −{" "}
+                  {formatBRL(descontoValor)}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+              <Label className="sm:w-20 shrink-0">Acréscimo</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={o.acrescimo}
+                onChange={(e) => setO({ ...o, acrescimo: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="border-t pt-3 flex justify-between text-lg font-semibold mt-auto">
+              <span>Total</span>
+              <span>{formatBRL(total)}</span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -524,21 +652,23 @@ function OrcamentoDetail() {
         </Card>
       )}
 
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <CardTitle className="text-base text-destructive">Excluir registro</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Esta ação remove permanentemente o {labelDocumento(o.status).toLowerCase()}{" "}
-            <span className="font-mono">{o.numero}</span> e não pode ser desfeita.
-          </p>
-          <Button type="button" variant="destructive" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="h-4 w-4 mr-1" />
-            Excluir {labelDocumento(o.status).toLowerCase()}
-          </Button>
-        </CardContent>
-      </Card>
+      {original && (
+        <Card className="border-destructive/30">
+          <CardHeader>
+            <CardTitle className="text-base text-destructive">Excluir registro</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Esta ação remove permanentemente o {labelDocumento(o.status).toLowerCase()}{" "}
+              <span className="font-mono">{o.numero}</span> e não pode ser desfeita.
+            </p>
+            <Button type="button" variant="destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4 mr-1" />
+              Excluir {labelDocumento(o.status).toLowerCase()}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <ConfirmDialog
         open={itemToRemove !== null}
@@ -556,6 +686,12 @@ function OrcamentoDetail() {
         }}
       />
 
+      <MobileFormFooter
+        label="Salvar orçamento"
+        onSave={saveAndExit}
+        loading={upsert.isPending}
+      />
+
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
@@ -570,6 +706,9 @@ function OrcamentoDetail() {
         <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl h-[min(90dvh,100vh-1rem)] p-0 flex flex-col">
           <DialogHeader className="p-4 border-b">
             <DialogTitle>Pré-visualização do PDF</DialogTitle>
+            <DialogDescription className="sr-only">
+              Visualização do documento do orçamento ou pedido antes de baixar ou imprimir.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0">
             {preview && (

@@ -1,47 +1,30 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  LayoutDashboard,
-  KanbanSquare,
-  FileText,
-  Users,
-  Wrench,
-  Wallet,
-  Building2,
-  Menu,
-  CreditCard,
-  LogOut,
-} from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { APP_NAME } from "@/lib/app-brand";
 import { logoutClient } from "@/lib/auth/client-auth";
 import { AppLogo } from "@/components/AppLogo";
 import { EmpresaBillingBanner } from "@/components/empresa/EmpresaBillingBanner";
+import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
+import {
+  EMPRESA_NAV,
+  getMobileHeaderBackLabel,
+  getMobileHeaderBackTarget,
+  normalizePath,
+  shouldShowMobileBottomNav,
+} from "@/lib/mobile-nav";
 import { cn } from "@/lib/utils";
 import { useEmpresaBranding } from "@/hooks/use-empresa-branding";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
-const NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, short: "Dashboard" },
-  { to: "/kanban", label: "Kanban", icon: KanbanSquare, short: "Kanban" },
-  { to: "/orcamentos", label: "Orçamentos e pedidos", icon: FileText, short: "Orçamentos" },
-  { to: "/clientes", label: "Clientes", icon: Users, short: "Clientes" },
-  { to: "/servicos", label: "Serviços", icon: Wrench, short: "Serviços" },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet, short: "Financeiro" },
-  { to: "/plano", label: "Plano", icon: CreditCard, short: "Plano" },
-  { to: "/empresa", label: "Empresa", icon: Building2, short: "Empresa" },
-] as const;
-
-function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function NavLinks({ pathname }: { pathname: string }) {
   return (
     <>
-      {NAV.map((n) => {
+      {EMPRESA_NAV.map((n) => {
         const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
         return (
           <Link
             key={n.to}
             to={n.to}
-            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
               active
@@ -59,15 +42,23 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 }
 
 function currentPageTitle(pathname: string): string {
-  const item = NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  if (pathname === "/menu") return "Mais opções";
+  const item = EMPRESA_NAV.find((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  if (pathname === "/clientes/novo") return "Novo cliente";
+  if (pathname.startsWith("/clientes/")) return "Editar cliente";
+  if (pathname === "/servicos/novo") return "Novo serviço";
+  if (pathname.startsWith("/servicos/")) return "Editar serviço";
+  if (pathname.startsWith("/orcamentos/")) return "Orçamento";
   return item?.short ?? APP_NAME;
 }
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const path = normalizePath(pathname);
   const { logoUrl, nome, isLoading } = useEmpresaBranding();
-  const [menuOpen, setMenuOpen] = useState(false);
   const pageTitle = currentPageTitle(pathname);
+  const showBottomNav = shouldShowMobileBottomNav(path);
+  const mobileBackTo = getMobileHeaderBackTarget(pathname);
 
   return (
     <div className="flex min-h-screen w-full bg-muted/30">
@@ -116,47 +107,29 @@ export function AppShell() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <header className="h-14 border-b bg-card flex items-center gap-3 px-4 md:px-6 shrink-0">
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="md:hidden shrink-0"
-              aria-label="Abrir menu"
-              onClick={() => setMenuOpen(true)}
+        <header className="h-14 border-b bg-card/80 backdrop-blur-md flex items-center gap-2 px-4 md:px-6 shrink-0 sticky top-0 z-30">
+          {mobileBackTo && (
+            <Link
+              to={mobileBackTo}
+              className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted transition-colors"
+              aria-label={getMobileHeaderBackLabel(pathname)}
             >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <SheetContent side="left" className="w-[min(100vw-2rem,18rem)] p-0 flex flex-col">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <div className="h-14 flex items-center px-5 border-b shrink-0">
-                {nome === APP_NAME ? (
-                  <AppLogo size="compact" />
-                ) : (
-                  <span className="font-semibold tracking-tight truncate">{nome}</span>
-                )}
-              </div>
-              <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-                <NavLinks pathname={pathname} onNavigate={() => setMenuOpen(false)} />
-              </nav>
-              {logoUrl && (
-                <div className="shrink-0 p-4 border-t">
-                  <img
-                    src={logoUrl}
-                    alt={`Logo ${nome}`}
-                    className="h-10 w-auto max-w-full object-contain mx-auto"
-                  />
-                </div>
-              )}
-            </SheetContent>
-          </Sheet>
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          )}
           <span className="md:hidden font-semibold truncate flex-1 min-w-0">{pageTitle}</span>
+          <span className="hidden md:block font-semibold truncate flex-1">{pageTitle}</span>
         </header>
-        <main className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 min-w-0 min-h-0 overflow-auto">
+        <main
+          className={cn(
+            "flex-1 flex flex-col p-4 sm:p-6 md:p-8 min-w-0 min-h-0 overflow-auto",
+            showBottomNav && "pb-28 md:pb-8",
+          )}
+        >
           <EmpresaBillingBanner />
           <Outlet />
         </main>
+        <MobileBottomNav />
       </div>
     </div>
   );

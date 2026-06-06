@@ -34,10 +34,15 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const otpRef = useRef<React.ComponentRef<typeof InputOTP>>(null);
 
+  const focusOtp = () => {
+    requestAnimationFrame(() => {
+      otpRef.current?.focus();
+      setTimeout(() => otpRef.current?.focus(), 50);
+    });
+  };
+
   useEffect(() => {
-    if (step !== "otp") return;
-    const id = requestAnimationFrame(() => otpRef.current?.focus());
-    return () => cancelAnimationFrame(id);
+    if (step === "otp") focusOtp();
   }, [step]);
 
   useEffect(() => {
@@ -69,6 +74,8 @@ function LoginPage() {
       });
       toast.success(result.message);
       setStep("otp");
+      setCode("");
+      focusOtp();
     } catch (e) {
       toast.error((e as Error).message ?? "Falha ao enviar código");
     } finally {
@@ -77,7 +84,7 @@ function LoginPage() {
   };
 
   const confirmOtp = async () => {
-    if (!role || code.length !== 6) {
+    if (!role || role === "none" || code.length !== 6) {
       toast.error("Informe o código de 6 dígitos.");
       return;
     }
@@ -104,22 +111,22 @@ function LoginPage() {
     role === "admin" ? "Acesso administrativo" : role === "empresa" ? "Acesso da empresa" : null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-b from-background via-muted/30 to-muted/60 p-4 sm:p-6">
+      <Card className="w-full max-w-md border-0 shadow-xl sm:border sm:shadow-lg rounded-2xl">
+        <CardHeader className="space-y-4 pb-2">
           <AppLogo className="mx-auto" />
           <CardTitle className="sr-only">{APP_NAME}</CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-base">
             Entre com seu WhatsApp. O código chega por mensagem.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 pb-8">
           {step === "whatsapp" ? (
             <>
               <PhoneField value={whatsapp} onChange={(digits) => setWhatsapp(digits)} />
               <Button
                 type="button"
-                className="w-full"
+                className="w-full h-12 text-base rounded-xl"
                 disabled={loading || whatsapp.length < 11}
                 onClick={() => void sendOtp()}
               >
@@ -134,9 +141,17 @@ function LoginPage() {
               <p className="text-sm text-muted-foreground text-center">
                 Código enviado para <strong>{maskDisplay(whatsapp)}</strong>
               </p>
-              <div className="flex justify-center">
-                <InputOTP ref={otpRef} maxLength={6} value={code} onChange={setCode} autoFocus>
-                  <InputOTPGroup>
+              <div className="flex justify-center py-2">
+                <InputOTP
+                  ref={otpRef}
+                  maxLength={6}
+                  value={code}
+                  onChange={setCode}
+                  autoFocus
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                >
+                  <InputOTPGroup className="gap-2">
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
@@ -146,7 +161,12 @@ function LoginPage() {
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button type="button" className="w-full" disabled={loading} onClick={() => void confirmOtp()}>
+              <Button
+                type="button"
+                className="w-full h-12 text-base rounded-xl"
+                disabled={loading || code.length !== 6}
+                onClick={() => void confirmOtp()}
+              >
                 Entrar
               </Button>
               <Button

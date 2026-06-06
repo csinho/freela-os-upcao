@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { newId } from "./id";
 import { moverOrcamentoComBillingRemote } from "@/lib/api/billing.functions";
+import { getEmpresaIdFromSessao } from "@/lib/auth/client-session";
 import {
   clientesRepo,
   empresaRepo,
@@ -140,7 +141,9 @@ export function useMoveOrcamento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: StatusOrcamento }) =>
-      moverOrcamentoComBillingRemote({ data: { id, status } }),
+      moverOrcamentoComBillingRemote({
+        data: { id, status, empresaId: getEmpresaIdFromSessao() ?? undefined },
+      }),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: QK.orcamentos });
       qc.invalidateQueries({ queryKey: QK.orcamento(v.id) });

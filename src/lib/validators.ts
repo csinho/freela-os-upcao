@@ -3,6 +3,26 @@ export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+/** Máscara monetária BRL: dígitos viram centavos → R$ 0,05, R$ 10,00, R$ 20.000,00 */
+export function maskBRL(value: string): string {
+  const digits = onlyDigits(value).slice(0, 15);
+  if (!digits) return "";
+  const reais = parseInt(digits, 10) / 100;
+  return reais.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function parseBRL(masked: string): number {
+  const digits = onlyDigits(masked);
+  if (!digits) return 0;
+  return parseInt(digits, 10) / 100;
+}
+
+/** Valor numérico → texto do input (vazio quando zero). */
+export function formatBRLInput(value: number): string {
+  if (!value) return "";
+  return maskBRL(String(Math.round(value * 100)));
+}
+
 /** Máscara CPF: 000.000.000-00 | CNPJ: 00.000.000/0000-00 */
 export function maskDocumento(value: string): string {
   const d = onlyDigits(value).slice(0, 14);

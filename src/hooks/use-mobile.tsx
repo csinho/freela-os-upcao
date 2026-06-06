@@ -1,8 +1,15 @@
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+export const MOBILE_BREAKPOINT = 768;
 
-export function useIsMobile() {
+/** Verificação síncrona no clique (evita redirect antes da hidratação do hook). */
+export function isViewportMobile(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth < MOBILE_BREAKPOINT;
+}
+
+/** `undefined` = ainda não mediu (SSR / 1º paint). */
+export function useIsMobile(): boolean | undefined {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
 
   React.useEffect(() => {
@@ -15,5 +22,5 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }

@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext,
   DragEndEvent,
@@ -96,12 +98,18 @@ function matchesSearch(o: Orcamento, q: string, clientes: Cliente[]): boolean {
 }
 
 function KanbanPage() {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { data: orcamentos = [] } = useOrcamentos();
   const { data: clientes = [] } = useClientes();
   const { data: financeiro = [] } = useFinanceiro();
   const move = useMoveOrcamento();
   const { billing } = useEmpresaBilling();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isMobile === true) void navigate({ to: "/orcamentos" });
+  }, [isMobile, navigate]);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dates, setDates] = useState<DateFilters>(emptyDates);
@@ -173,6 +181,10 @@ function KanbanPage() {
     setSearch("");
     setDates(emptyDates());
   };
+
+  if (isMobile === true) {
+    return <p className="text-sm text-muted-foreground">Redirecionando…</p>;
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-[calc(100dvh-7.5rem)] gap-3">

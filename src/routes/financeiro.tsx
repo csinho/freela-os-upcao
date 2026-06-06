@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
-import { ListCard } from "@/components/list-card";
+import { MobileCard } from "@/components/mobile/mobile-card";
+import { MobilePagination } from "@/components/mobile/mobile-pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({ meta: [{ title: pageTitle("Financeiro") }] }),
@@ -44,6 +46,8 @@ function FinanceiroPage() {
   const list = financeiro
     .filter((f) => f.orcamento_id)
     .filter((f) => filter === "todos" || f.tipo === filter);
+
+  const pagination = usePagination(list, 10, filter);
 
   const totals = {
     receber: financeiro
@@ -84,11 +88,11 @@ function FinanceiroPage() {
       </PageHeader>
 
       <div className="md:hidden space-y-3">
-        {list.map((f) => {
+        {pagination.pageItems.map((f) => {
           const cli = clientes.find((c) => c.id === f.cliente_id);
           const ped = orcamentos.find((o) => o.id === f.orcamento_id);
           return (
-            <ListCard key={f.id}>
+            <MobileCard key={f.id}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-medium text-sm">{f.descricao}</div>
@@ -111,7 +115,7 @@ function FinanceiroPage() {
                 </div>
                 <div className="text-sm font-semibold shrink-0">{formatBRL(f.valor)}</div>
               </div>
-            </ListCard>
+            </MobileCard>
           );
         })}
         {list.length === 0 && (
@@ -119,6 +123,15 @@ function FinanceiroPage() {
             Nenhum lançamento. Mova um orçamento para &quot;Em produção&quot; para gerar a entrada.
           </p>
         )}
+        <MobilePagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          hasPrev={pagination.hasPrev}
+          hasNext={pagination.hasNext}
+          onPrev={pagination.goPrev}
+          onNext={pagination.goNext}
+        />
       </div>
 
       <div className="hidden md:block rounded-md border bg-card">
