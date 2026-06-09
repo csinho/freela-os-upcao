@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getEmpresaIdFromSessao } from "@/lib/auth/client-session";
+import { ensureSupabaseSession } from "@/lib/auth/supabase-session";
 import { normalizeEmpresaCategoria, type CategoriaProduto } from "@/lib/empresa-categorias";
 import type { Produto } from "./types";
 
@@ -42,6 +43,7 @@ export const produtosRepo = {
 
   async upsert(p: Produto): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const { error } = await supabase.from("produtos").upsert({
       id: p.id,
       empresa_id: empresaId,
@@ -57,12 +59,14 @@ export const produtosRepo = {
   },
 
   async remove(id: string): Promise<void> {
+    await ensureSupabaseSession();
     const { error } = await supabase.from("produtos").update({ ativo: false }).eq("id", id);
     if (error) throw new Error(error.message);
   },
 
   async adjustQuantidade(id: string, delta: number): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const { data, error: getErr } = await supabase
       .from("produtos")
       .select("quantidade")

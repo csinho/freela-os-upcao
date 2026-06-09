@@ -1,0 +1,3 @@
+-- Nota: empresas tem RLS apenas SELECT + UPDATE para authenticated (sem INSERT).
+-- O app NÃO deve usar upsert() nessa tabela — apenas update().id = auth_empresa_id().
+-- Cadastro de nova empresa continua só via service role (auth server / admin).

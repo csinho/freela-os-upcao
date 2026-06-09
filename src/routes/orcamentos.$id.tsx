@@ -653,8 +653,8 @@ function OrcamentoDetail() {
           <CardContent className="space-y-1 text-sm">
             {o.historico.map((h, i) => (
               <div key={i} className="text-muted-foreground">
-                {new Date(h.data).toLocaleString("pt-BR")} — {STATUS_LABEL[h.de]} →{" "}
-                {STATUS_LABEL[h.para]}
+                {new Date(h.data).toLocaleString("pt-BR")} — {getStatusLabel(h.de, config.id)} →{" "}
+                {getStatusLabel(h.para, config.id)}
               </div>
             ))}
           </CardContent>
@@ -668,12 +668,13 @@ function OrcamentoDetail() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Esta ação remove permanentemente o {labelDocumento(o.status).toLowerCase()}{" "}
+              Esta ação remove permanentemente o{" "}
+              {labelDocumento(o.status, config.id).toLowerCase()}{" "}
               <span className="font-mono">{o.numero}</span> e não pode ser desfeita.
             </p>
             <Button type="button" variant="destructive" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="h-4 w-4 mr-1" />
-              Excluir {labelDocumento(o.status).toLowerCase()}
+              Excluir {labelDocumento(o.status, config.id).toLowerCase()}
             </Button>
           </CardContent>
         </Card>
@@ -704,7 +705,7 @@ function OrcamentoDetail() {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Excluir ${labelDocumento(o.status).toLowerCase()}?`}
+        title={`Excluir ${labelDocumento(o.status, config.id).toLowerCase()}?`}
         description={`O registro ${o.numero} — "${o.nome_projeto || "Sem nome"}" será removido permanentemente.`}
         confirmLabel="Excluir"
         variant="destructive"

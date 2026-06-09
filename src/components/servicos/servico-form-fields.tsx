@@ -106,16 +106,16 @@ export function ServicoFormFields({
   }
 
   return (
-    <>
-      <DialogHeader>
+    <div className="flex flex-col gap-6">
+      <DialogHeader className="space-y-0 text-left">
         <DialogTitle>{value.nome ? "Editar serviço" : "Novo serviço"}</DialogTitle>
       </DialogHeader>
       {fields}
-      <DialogFooter>
+      <DialogFooter className="pt-2 sm:justify-end">
         <Button type="button" disabled={!podeSalvar || saving} onClick={submit}>
           {saving ? "Salvando…" : "Salvar"}
         </Button>
       </DialogFooter>
-    </>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { pageTitle } from "@/lib/app-brand";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { useEmpresaDataReady } from "@/hooks/use-empresa-data-ready";
 import { useEmpresa, useSaveEmpresa } from "@/lib/store";
 import type { Empresa, RedeSocial, RedeSocialTipo } from "@/lib/types";
 import { REDE_SOCIAL_LABEL, REDES_SOCIAIS_OPCOES } from "@/lib/types";
@@ -43,7 +44,8 @@ function FieldError({ msg }: { msg?: string | null }) {
 }
 
 function EmpresaPage() {
-  const { data, isLoading } = useEmpresa();
+  const { ready: sessaoPronta } = useEmpresaDataReady();
+  const { data, isLoading, isFetching, isError, error } = useEmpresa();
   const save = useSaveEmpresa();
   const [e, setE] = useState<Empresa>(blank);
   const [cepLoading, setCepLoading] = useState(false);
@@ -156,7 +158,17 @@ function EmpresaPage() {
     save.mutate(e);
   };
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (!sessaoPronta || isLoading || isFetching) {
+    return <p className="text-sm text-muted-foreground">Carregando dados da empresa…</p>;
+  }
+
+  if (isError) {
+    return (
+      <p className="text-sm text-destructive">
+        {(error as Error)?.message ?? "Não foi possível carregar os dados. Tente sair e entrar de novo."}
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-4 max-w-4xl pb-24 md:pb-0">

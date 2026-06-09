@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getEmpresaIdFromSessao } from "@/lib/auth/client-session";
+import { ensureSupabaseSession } from "@/lib/auth/supabase-session";
 import { normalizeEmpresaCategoria } from "@/lib/empresa-categorias";
 import type {
   Cliente,
@@ -39,12 +40,9 @@ export const empresaRepo = {
     const { data, error } = await supabase.from("empresas").select("*").eq("id", empresaId).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) {
-      return {
-        id: empresaId,
-        nome: "Minha Empresa",
-        categoria: "generico",
-        endereco: {},
-      };
+      throw new Error(
+        "Cadastro da empresa não encontrado. Saia e entre novamente com o WhatsApp.",
+      );
     }
     return {
       id: data.id,
@@ -64,8 +62,9 @@ export const empresaRepo = {
   },
   async upsert(e: Empresa): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
+    // RLS em empresas permite apenas UPDATE (não INSERT). upsert() falha sempre.
     const payload = {
-      id: e.id || empresaId,
       nome: e.nome,
       logo_url: e.logo_url ?? null,
       documento: e.documento ?? null,
@@ -78,8 +77,18 @@ export const empresaRepo = {
       condicoes_padrao: e.condicoes_padrao ?? null,
       observacoes_padrao: e.observacoes_padrao ?? null,
     };
-    const { error } = await supabase.from("empresas").upsert(payload);
+    const { data, error } = await supabase
+      .from("empresas")
+      .update(payload)
+      .eq("id", empresaId)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!data) {
+      throw new Error(
+        "Não foi possível salvar os dados da empresa. Saia e entre novamente.",
+      );
+    }
   },
 };
 
@@ -105,6 +114,7 @@ export const clientesRepo = {
   },
   async upsert(c: Cliente): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const { error } = await supabase.from("clientes").upsert({
       id: c.id,
       empresa_id: empresaId,
@@ -118,6 +128,7 @@ export const clientesRepo = {
     if (error) throw new Error(error.message);
   },
   async remove(id: string): Promise<void> {
+    await ensureSupabaseSession();
     const { error } = await supabase.from("clientes").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
@@ -140,6 +151,7 @@ export const servicosRepo = {
   },
   async upsert(s: Servico): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const { error } = await supabase.from("servicos").upsert({
       id: s.id,
       empresa_id: empresaId,
@@ -153,6 +165,7 @@ export const servicosRepo = {
     if (error) throw new Error(error.message);
   },
   async remove(id: string): Promise<void> {
+    await ensureSupabaseSession();
     const { error } = await supabase.from("servicos").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
@@ -261,6 +274,7 @@ export const orcamentosRepo = {
   },
   async upsert(o: Orcamento): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const sub = calcSubtotal(o.itens);
     const descontoValor = calcDescontoValor(sub, o.desconto_percentual ?? 0);
     const head: Record<string, unknown> = {
@@ -362,11 +376,13 @@ export const orcamentosRepo = {
     }
   },
   async remove(id: string): Promise<void> {
+    await ensureSupabaseSession();
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },
   async move(id: string, status: string): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const atual = await this.get(id);
     if (!atual || atual.status === status) return;
 
@@ -466,6 +482,7 @@ export const financeiroRepo = {
   },
   async upsert(f: Financeiro): Promise<void> {
     const empresaId = requireEmpresaId();
+    await ensureSupabaseSession();
     const { error } = await supabase.from("financeiro").upsert({
       id: f.id,
       empresa_id: empresaId,
@@ -485,6 +502,7 @@ export const financeiroRepo = {
     if (error) throw new Error(error.message);
   },
   async remove(id: string): Promise<void> {
+    await ensureSupabaseSession();
     const { error } = await supabase.from("financeiro").delete().eq("id", id);
     if (error) throw new Error(error.message);
   },

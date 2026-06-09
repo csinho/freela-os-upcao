@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { hasSupabaseSession } from "@/lib/auth/supabase-session";
 import { getClientSessao, isEmpresaSessao } from "@/lib/auth/client-session";
+import { supabase } from "@/integrations/supabase/client";
 
 /** Aguarda sessão local + JWT do Supabase antes de buscar dados da empresa. */
 export function useEmpresaDataReady(): { ready: boolean; empresaId: string | null } {
@@ -22,7 +23,7 @@ export function useEmpresaDataReady(): { ready: boolean; empresaId: string | nul
       }
     };
 
-    void supabase.auth.getSession().then(({ data }) => sync(!!data.session));
+    void hasSupabaseSession().then(sync);
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       sync(!!session);

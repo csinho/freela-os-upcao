@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { getClientSessao, isEmpresaSessao } from "@/lib/auth/client-session";
+import { hasSupabaseSession } from "@/lib/auth/supabase-session";
 
 export function RequireEmpresa({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -12,7 +13,13 @@ export function RequireEmpresa({ children }: { children: ReactNode }) {
       void navigate({ to: "/login" });
       return;
     }
-    setReady(true);
+    void hasSupabaseSession().then((ok) => {
+      if (!ok) {
+        void navigate({ to: "/login" });
+        return;
+      }
+      setReady(true);
+    });
   }, [navigate]);
 
   if (!ready) {
