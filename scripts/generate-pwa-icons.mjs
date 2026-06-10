@@ -64,11 +64,11 @@ const manifest = {
   description: "Gestão de orçamentos, pedidos e financeiro para prestadores de serviço",
   lang: "pt-BR",
   dir: "ltr",
-  start_url: "/",
+  start_url: "/login",
   scope: "/",
   display: "standalone",
   orientation: "portrait-primary",
-  theme_color: brandDark,
+  theme_color: "#ffffff",
   background_color: "#ffffff",
   categories: ["business", "productivity"],
   icons: [

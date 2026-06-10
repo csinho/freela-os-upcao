@@ -1,7 +1,7 @@
 import { APP_DESCRIPTION, APP_NAME } from "./app-brand";
 import { BRAND_COLOR_DARK, BRAND_COLOR_WHITE } from "./brand-colors";
 
-export const PWA_THEME_COLOR = BRAND_COLOR_DARK;
+export const PWA_THEME_COLOR = BRAND_COLOR_WHITE;
 export const PWA_BACKGROUND_COLOR = BRAND_COLOR_WHITE;
 
 export const pwaManifest = {
@@ -10,7 +10,7 @@ export const pwaManifest = {
   description: APP_DESCRIPTION,
   lang: "pt-BR",
   dir: "ltr" as const,
-  start_url: "/",
+  start_url: "/login",
   scope: "/",
   display: "standalone" as const,
   orientation: "portrait-primary" as const,
