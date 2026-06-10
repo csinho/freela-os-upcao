@@ -1,8 +1,10 @@
 export const APP_NAME = "Up Serviços";
 export const APP_NAME_ADMIN = "Up Serviços Admin";
-export const APP_LOGO_INITIALS = "US";
 export const APP_DESCRIPTION =
   "Gestão de orçamentos, pedidos e financeiro para prestadores de serviço";
+
+/** Caminho público do favicon padrão (gerado em `public/` pelo script PWA). */
+export const APP_FAVICON_PATH = "/favicon.png";
 
 export function pageTitle(suffix: string): string {
   return `${suffix} — ${APP_NAME}`;

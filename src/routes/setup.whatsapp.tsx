@@ -122,7 +122,7 @@ function SetupWhatsappPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="space-y-4">
-          <AppLogo className="mx-auto" />
+          <AppLogo size="hero" className="mx-auto" />
           <CardTitle className="text-center">Setup WhatsApp (sem login)</CardTitle>
           <CardDescription className="text-center">
             Use quando a instância Evolution foi apagada e você não consegue receber OTP para entrar no admin.

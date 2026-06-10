@@ -1,6 +1,6 @@
-const FAVICON_RELS = ["icon", "shortcut icon", "apple-touch-icon"] as const;
+import { APP_FAVICON_PATH } from "@/lib/app-brand";
 
-const DEFAULT_FAVICON = "/favicon.svg";
+const FAVICON_RELS = ["icon", "shortcut icon", "apple-touch-icon"] as const;
 
 function mimeFromDataUrl(href: string): string | undefined {
   const m = href.match(/^data:(image\/[a-z+]+);/i);
@@ -19,12 +19,13 @@ export function applyFavicon(href: string): void {
     }
     el.href = href;
     if (type) el.type = type;
+    else if (href.endsWith(".png")) el.type = "image/png";
     else el.removeAttribute("type");
   }
 }
 
 export function resetFavicon(): void {
-  applyFavicon(DEFAULT_FAVICON);
+  applyFavicon(APP_FAVICON_PATH);
 }
 
 export function syncFavicon(logoUrl?: string | null): void {

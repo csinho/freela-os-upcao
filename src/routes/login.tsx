@@ -122,7 +122,7 @@ function LoginPage() {
       <PwaInstallPrompt />
       <Card className="w-full max-w-md border-0 shadow-xl sm:border sm:shadow-lg rounded-2xl">
         <CardHeader className="space-y-4 pb-2">
-          <AppLogo className="mx-auto" />
+          <AppLogo size="hero" className="mx-auto" />
           <CardTitle className="sr-only">{APP_NAME}</CardTitle>
           <CardDescription className="text-center text-base">
             Entre com seu WhatsApp. O código chega por mensagem.

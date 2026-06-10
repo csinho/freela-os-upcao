@@ -59,7 +59,7 @@ function CadastroEmpresaPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
-          <AppLogo className="mx-auto" />
+          <AppLogo size="hero" className="mx-auto" />
           <CardTitle className="text-center">Criar conta</CardTitle>
           <CardDescription>
             Nome, tipo de negócio e WhatsApp. Você entra direto no painel.

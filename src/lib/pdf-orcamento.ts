@@ -22,6 +22,7 @@ import {
   formatPercentLabel,
 } from "./types";
 import { labelDocumento, labelDocumentoLower } from "./empresa-categorias";
+import { BRAND_COLOR_DARK } from "./brand-colors";
 
 function enderecoLinha(e?: {
   rua?: string;
@@ -51,7 +52,7 @@ function signatureField(label: string): PdfContent {
           hLineWidth: (i: number, node: { table: { body: unknown[] } }) =>
             i === node.table.body.length ? 0.5 : 0,
           vLineWidth: () => 0,
-          hLineColor: () => "#111111",
+          hLineColor: () => BRAND_COLOR_DARK,
           paddingLeft: () => 0,
           paddingRight: () => 0,
           paddingTop: () => 0,
@@ -155,14 +156,14 @@ export function buildOrcamentoPdfDoc(
   return {
     pageSize: "A4",
     pageMargins: [28, 28, 28, 92],
-    defaultStyle: { fontSize: 9, color: "#111111" },
+    defaultStyle: { fontSize: 9, color: BRAND_COLOR_DARK },
     styles: {
       companyName: { fontSize: 13, bold: true },
       small: { fontSize: 8, color: "#444444" },
       docTitle: { fontSize: 10, color: "#555555" },
       docNumber: { fontSize: 13, bold: true },
       sectionTitle: { fontSize: 8, color: "#666666", bold: true },
-      tableHeader: { fontSize: 8, bold: true, color: "#ffffff", fillColor: "#111111" },
+      tableHeader: { fontSize: 8, bold: true, color: "#ffffff", fillColor: BRAND_COLOR_DARK },
       tableCell: { fontSize: 8 },
       totalFinal: { fontSize: 10, bold: true },
     },

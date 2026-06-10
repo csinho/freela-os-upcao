@@ -13,7 +13,7 @@ import { RequireEmpresa } from "@/components/auth/RequireEmpresa";
 import { Toaster } from "@/components/ui/sonner";
 import { PwaRegister } from "@/components/pwa-register";
 
-import { APP_DESCRIPTION, APP_NAME } from "@/lib/app-brand";
+import { APP_DESCRIPTION, APP_FAVICON_PATH, APP_NAME } from "@/lib/app-brand";
 import { PWA_THEME_COLOR } from "@/lib/pwa-config";
 import appCss from "../styles.css?url";
 
@@ -104,8 +104,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "icon",
-        type: "image/svg+xml",
-        href: "/favicon.svg",
+        type: "image/png",
+        href: APP_FAVICON_PATH,
+      },
+      {
+        rel: "shortcut icon",
+        type: "image/png",
+        href: APP_FAVICON_PATH,
       },
       {
         rel: "apple-touch-icon",

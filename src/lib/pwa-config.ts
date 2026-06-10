@@ -1,8 +1,8 @@
 import { APP_DESCRIPTION, APP_NAME } from "./app-brand";
+import { BRAND_COLOR_DARK, BRAND_COLOR_WHITE } from "./brand-colors";
 
-/** Cores alinhadas ao favicon (#111) e fundo claro do app. */
-export const PWA_THEME_COLOR = "#111111";
-export const PWA_BACKGROUND_COLOR = "#ffffff";
+export const PWA_THEME_COLOR = BRAND_COLOR_DARK;
+export const PWA_BACKGROUND_COLOR = BRAND_COLOR_WHITE;
 
 export const pwaManifest = {
   name: APP_NAME,
@@ -19,6 +19,11 @@ export const pwaManifest = {
   categories: ["business", "productivity"],
   icons: [
     {
+      src: "/favicon.png",
+      sizes: "192x192",
+      type: "image/png",
+    },
+    {
       src: "/pwa-192x192.png",
       sizes: "192x192",
       type: "image/png",
@@ -29,7 +34,7 @@ export const pwaManifest = {
       type: "image/png",
     },
     {
-      src: "/pwa-512x512.png",
+      src: "/pwa-512x512-maskable.png",
       sizes: "512x512",
       type: "image/png",
       purpose: "maskable",

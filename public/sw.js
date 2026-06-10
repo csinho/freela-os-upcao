@@ -1,5 +1,12 @@
-const CACHE = "up-servicos-static-v1";
-const PRECACHE = ["/favicon.svg", "/pwa-192x192.png", "/pwa-512x512.png", "/manifest.webmanifest"];
+const CACHE = "up-servicos-static-v2";
+const PRECACHE = [
+  "/favicon.png",
+  "/pwa-180x180.png",
+  "/pwa-192x192.png",
+  "/pwa-512x512.png",
+  "/pwa-512x512-maskable.png",
+  "/manifest.webmanifest",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
