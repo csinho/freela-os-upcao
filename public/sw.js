@@ -1,4 +1,4 @@
-const CACHE = "up-servicos-static-v2";
+const CACHE = "up-servicos-static-v3";
 const PRECACHE = [
   "/favicon.png",
   "/pwa-180x180.png",

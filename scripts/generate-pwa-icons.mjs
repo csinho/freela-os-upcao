@@ -4,7 +4,7 @@ import sharp from "sharp";
 
 const root = process.cwd();
 const faviconSource = path.join(root, "src", "images", "favicon.png");
-const brandDark = "#11214D";
+const iconBackground = "#ffffff";
 
 if (!fs.existsSync(faviconSource)) {
   console.error("ERRO: src/images/favicon.png não encontrado.");
@@ -14,9 +14,28 @@ if (!fs.existsSync(faviconSource)) {
 const publicDir = path.join(root, "public");
 fs.mkdirSync(publicDir, { recursive: true });
 
+async function iconOnBackground(size) {
+  const logo = await sharp(faviconSource)
+    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: iconBackground,
+    },
+  })
+    .composite([{ input: logo, gravity: "center" }])
+    .png()
+    .toBuffer();
+}
+
 /** Favicon principal (aba do navegador). */
 const faviconOut = path.join(publicDir, "favicon.png");
-await sharp(faviconSource).resize(192, 192, { fit: "contain", background: brandDark }).png().toFile(faviconOut);
+await sharp(await iconOnBackground(192)).toFile(faviconOut);
 console.log("gerado:", path.relative(root, faviconOut));
 
 const sizes = [
@@ -27,18 +46,14 @@ const sizes = [
 
 for (const { size, name } of sizes) {
   const out = path.join(publicDir, name);
-  await sharp(faviconSource)
-    .resize(size, size, { fit: "contain", background: brandDark })
-    .png()
-    .toFile(out);
+  await sharp(await iconOnBackground(size)).toFile(out);
   console.log("gerado:", path.relative(root, out));
 }
 
-/** Ícone maskable com margem de segurança (~20%). */
+/** Ícone maskable com margem de segurança (~20%) em fundo branco. */
 const maskableOut = path.join(publicDir, "pwa-512x512-maskable.png");
 const maskableSize = 512;
 const inner = Math.round(maskableSize * 0.72);
-const inset = Math.round((maskableSize - inner) / 2);
 const innerBuffer = await sharp(faviconSource)
   .resize(inner, inner, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
   .png()
@@ -49,10 +64,10 @@ await sharp({
     width: maskableSize,
     height: maskableSize,
     channels: 4,
-    background: brandDark,
+    background: iconBackground,
   },
 })
-  .composite([{ input: innerBuffer, left: inset, top: inset }])
+  .composite([{ input: innerBuffer, gravity: "center" }])
   .png()
   .toFile(maskableOut);
 console.log("gerado:", path.relative(root, maskableOut));
@@ -68,13 +83,13 @@ const manifest = {
   scope: "/",
   display: "standalone",
   orientation: "portrait-primary",
-  theme_color: "#ffffff",
-  background_color: "#ffffff",
+  theme_color: iconBackground,
+  background_color: iconBackground,
   categories: ["business", "productivity"],
   icons: [
-    { src: "/favicon.png", sizes: "192x192", type: "image/png" },
-    { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
-    { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+    { src: "/favicon.png", sizes: "192x192", type: "image/png", purpose: "any" },
+    { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+    { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "any" },
     { src: "/pwa-512x512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
   ],
 };
