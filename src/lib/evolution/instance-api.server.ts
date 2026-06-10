@@ -45,11 +45,21 @@ async function evolutionFetch<T>(
   return JSON.parse(text) as T;
 }
 
+function pickBase64(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  // Evolution às vezes devolve o payload bruto do QR em "code" (não é imagem).
+  if (trimmed.startsWith("2@") || trimmed.length < 64) return null;
+  return trimmed;
+}
+
 function parseQrResponse(data: Record<string, unknown>): EvolutionQrPayload {
   const qrcode = data.qrcode as { base64?: string } | undefined;
   const base64 =
-    (typeof data.base64 === "string" ? data.base64 : null) ??
-    (typeof qrcode?.base64 === "string" ? qrcode.base64 : null);
+    pickBase64(data.base64) ??
+    pickBase64(qrcode?.base64) ??
+    pickBase64((data.instance as { qrcode?: { base64?: string } } | undefined)?.qrcode?.base64);
   const pairingCode = typeof data.pairingCode === "string" ? data.pairingCode : null;
   return { base64, pairingCode };
 }

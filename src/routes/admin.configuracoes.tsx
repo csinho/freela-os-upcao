@@ -30,10 +30,10 @@ function AdminConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { background?: boolean }) => {
     const sessao = getClientSessao();
     if (!sessao) return;
-    setLoading(true);
+    if (!options?.background) setLoading(true);
     try {
       const data = await getAdminSettingsRemote({ data: { adminWhatsapp: sessao.id } });
       setSettings(data);
@@ -42,7 +42,7 @@ function AdminConfiguracoesPage() {
     } catch (e) {
       toast.error((e as Error).message ?? "Falha ao carregar configurações");
     } finally {
-      setLoading(false);
+      if (!options?.background) setLoading(false);
     }
   }, [tick]);
 
@@ -151,7 +151,10 @@ function AdminConfiguracoesPage() {
             </CardContent>
           </Card>
 
-          <AdminEvolutionSettings settings={settings} onUpdated={() => void load()} />
+          <AdminEvolutionSettings
+            settings={settings}
+            onUpdated={() => void load({ background: true })}
+          />
         </>
       )}
     </div>

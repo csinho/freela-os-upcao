@@ -20,6 +20,12 @@ type Props = {
   onUpdated: () => void;
 };
 
+function qrImageSrc(base64: string): string {
+  const trimmed = base64.trim();
+  if (trimmed.startsWith("data:")) return trimmed;
+  return `data:image/png;base64,${trimmed}`;
+}
+
 function applyQrResult(
   result: { base64: string | null; pairingCode: string | null; connectionState: string },
   setters: {
@@ -28,7 +34,7 @@ function applyQrResult(
     setConnectionState: (v: string) => void;
   },
 ) {
-  setters.setQrBase64(result.base64);
+  setters.setQrBase64(result.base64?.trim() || null);
   setters.setPairingCode(result.pairingCode);
   setters.setConnectionState(result.connectionState);
 }
@@ -194,7 +200,7 @@ export function AdminEvolutionSettings({ settings, onUpdated }: Props) {
         {qrBase64 && (
           <div className="flex flex-col items-center gap-2 p-4 border rounded-lg bg-white">
             <img
-              src={qrBase64.startsWith("data:") ? qrBase64 : `data:image/png;base64,${qrBase64}`}
+              src={qrImageSrc(qrBase64)}
               alt="QR Code Evolution WhatsApp"
               className="max-w-[240px] w-full"
             />
