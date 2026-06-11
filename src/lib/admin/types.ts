@@ -1,5 +1,6 @@
 import type { BillingStatus } from "@/lib/billing/types";
 import type { EmpresaCategoria } from "@/lib/empresa-categorias/types";
+import type { Cliente, Empresa, Orcamento } from "@/lib/types";
 
 export type AdminSessao = {
   tipo: "admin";
@@ -29,6 +30,20 @@ export type AdminEmpresaDetalhe = AdminEmpresaListItem & {
   logoUrl: string | null;
   documento: string | null;
   billingPeriodEndsAt: string | null;
+};
+
+export type AdminOrcamentoListItem = {
+  id: string;
+  numero: string;
+  status: string;
+  valorTotal: number;
+  dataCriacao: string;
+};
+
+export type AdminOrcamentoPdfData = {
+  orcamento: Orcamento;
+  empresa: Empresa;
+  cliente?: Cliente;
 };
 
 export type AdminSettings = {

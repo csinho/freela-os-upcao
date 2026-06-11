@@ -14,6 +14,7 @@ import type { AdminEmpresaDetalhe } from "@/lib/admin/types";
 import { formatDatePt } from "@/lib/billing/dates";
 import { getClientSessao } from "@/lib/auth/client-session";
 import { AdminEmpresaBillingPayments } from "@/components/admin/AdminEmpresaBillingPayments";
+import { AdminEmpresaOrcamentos } from "@/components/admin/AdminEmpresaOrcamentos";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -206,6 +207,22 @@ function AdminEmpresaDetalhePage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Orçamentos</CardTitle>
+          <CardDescription>
+            Orçamentos e pedidos desta empresa — visualize ou baixe o PDF de cada um.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AdminEmpresaOrcamentos
+            empresaId={empresaId}
+            categoria={empresa.categoria}
+            refreshKey={tick}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -12,6 +12,34 @@ function normalizeSearch(s: string): string {
     .trim();
 }
 
+async function countByEmpresa(
+  sb: ReturnType<typeof getSupabaseServer>,
+  table: "orcamentos" | "clientes",
+): Promise<Map<string, number>> {
+  const { data, error } = await sb.from(table).select("empresa_id");
+  if (error) throw new Error(error.message);
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const empresaId = row.empresa_id as string;
+    counts.set(empresaId, (counts.get(empresaId) ?? 0) + 1);
+  }
+  return counts;
+}
+
+async function countForEmpresa(
+  sb: ReturnType<typeof getSupabaseServer>,
+  table: "orcamentos" | "clientes",
+  empresaId: string,
+): Promise<number> {
+  const { count, error } = await sb
+    .from(table)
+    .select("id", { count: "exact", head: true })
+    .eq("empresa_id", empresaId);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 function matchesSearch(
   empresa: { nome: string; telefone?: string | null },
   query: string,
@@ -40,13 +68,10 @@ export async function listarEmpresasAdmin(
 
   if (error) throw new Error(error.message);
 
-  const [{ count: orcCount }, { count: cliCount }] = await Promise.all([
-    sb.from("orcamentos").select("id", { count: "exact", head: true }),
-    sb.from("clientes").select("id", { count: "exact", head: true }),
+  const [orcamentosPorEmpresa, clientesPorEmpresa] = await Promise.all([
+    countByEmpresa(sb, "orcamentos"),
+    countByEmpresa(sb, "clientes"),
   ]);
-
-  const globalOrcamentos = orcCount ?? 0;
-  const globalClientes = cliCount ?? 0;
 
   return (empresas ?? [])
     .filter((e) => matchesSearch(e, search ?? ""))
@@ -62,8 +87,8 @@ export async function listarEmpresasAdmin(
       nextBillingAt: e.next_billing_at ?? null,
       lastPaymentAt: e.last_payment_at ?? null,
       createdAt: e.created_at ?? null,
-      orcamentosCount: globalOrcamentos,
-      clientesCount: globalClientes,
+      orcamentosCount: orcamentosPorEmpresa.get(e.id) ?? 0,
+      clientesCount: clientesPorEmpresa.get(e.id) ?? 0,
     }));
 }
 
@@ -83,9 +108,9 @@ export async function obterEmpresaAdmin(
   if (error) throw new Error(error.message);
   if (!e) throw new Error("Empresa não encontrada.");
 
-  const [{ count: orcCount }, { count: cliCount }] = await Promise.all([
-    sb.from("orcamentos").select("id", { count: "exact", head: true }),
-    sb.from("clientes").select("id", { count: "exact", head: true }),
+  const [orcCount, cliCount] = await Promise.all([
+    countForEmpresa(sb, "orcamentos", empresaId),
+    countForEmpresa(sb, "clientes", empresaId),
   ]);
 
   const billingState = getBillingUiState({
@@ -112,8 +137,8 @@ export async function obterEmpresaAdmin(
     lastPaymentAt: e.last_payment_at ?? null,
     createdAt: e.created_at ?? null,
     billingPeriodEndsAt: e.billing_period_ends_at ?? null,
-    orcamentosCount: orcCount ?? 0,
-    clientesCount: cliCount ?? 0,
+    orcamentosCount: orcCount,
+    clientesCount: cliCount,
   };
 }
 

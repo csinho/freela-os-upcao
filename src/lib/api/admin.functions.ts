@@ -11,6 +11,10 @@ import {
   setEmpresaCategoriaAdmin,
   setEmpresaPausadaAdmin,
 } from "@/lib/admin/empresas.server";
+import {
+  listarOrcamentosEmpresaAdmin,
+  obterOrcamentoPdfAdmin,
+} from "@/lib/admin/orcamentos.server";
 import { getAdminDashboard } from "@/lib/admin/metrics.server";
 import {
   confirmAdminLoginOtpUnified,
@@ -100,6 +104,26 @@ export const setEmpresaPausadaAdminRemote = createServerFn({ method: "POST" })
     await assertFromInput(data.adminWhatsapp);
     await setEmpresaPausadaAdmin(data.empresaId, data.pausada);
     return { ok: true };
+  });
+
+export const listarOrcamentosEmpresaAdminRemote = createServerFn({ method: "POST" })
+  .inputValidator((data: { adminWhatsapp: string; empresaId: string }) =>
+    adminWhatsappSchema.extend({ empresaId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    await assertFromInput(data.adminWhatsapp);
+    return listarOrcamentosEmpresaAdmin(data.empresaId);
+  });
+
+export const obterOrcamentoPdfAdminRemote = createServerFn({ method: "POST" })
+  .inputValidator((data: { adminWhatsapp: string; empresaId: string; orcamentoId: string }) =>
+    adminWhatsappSchema
+      .extend({ empresaId: z.string().uuid(), orcamentoId: z.string().uuid() })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    await assertFromInput(data.adminWhatsapp);
+    return obterOrcamentoPdfAdmin(data.empresaId, data.orcamentoId);
   });
 
 export const listarPagamentosPlanoAdminRemote = createServerFn({ method: "POST" })

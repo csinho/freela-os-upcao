@@ -172,7 +172,7 @@ export const servicosRepo = {
 };
 
 // ============ Orçamentos ============
-function mapOrcamento(r: any): Orcamento {
+export function mapOrcamento(r: any): Orcamento {
   const itens: OrcamentoItem[] = (r.orcamento_itens ?? [])
     .slice()
     .sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0))
@@ -249,7 +249,7 @@ function resolveDescontoPercentual(
   return Math.min(100, Math.round((legacy / sub) * 10000) / 100);
 }
 
-const ORC_SELECT = "*, orcamento_itens(*), historico_status(*), orcamento_assistencia(*)";
+export const ORC_SELECT = "*, orcamento_itens(*), historico_status(*), orcamento_assistencia(*)";
 
 export const orcamentosRepo = {
   async list(): Promise<Orcamento[]> {
