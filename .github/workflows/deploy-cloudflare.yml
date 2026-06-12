@@ -61,7 +61,21 @@ jobs:
         run: |
           set -euo pipefail
           put_secret() {
-            printf '%s' "$2" | npx wrangler secret put "$1"
+            local name="$1"
+            local value="$2"
+            local attempt=1
+            local max=5
+            while [ "$attempt" -le "$max" ]; do
+              if printf '%s' "$value" | npx wrangler secret put "$name"; then
+                echo "Secret $name sincronizado."
+                return 0
+              fi
+              echo "Falha ao sincronizar $name (tentativa $attempt/$max). Aguardando..."
+              sleep $((attempt * 15))
+              attempt=$((attempt + 1))
+            done
+            echo "Não foi possível sincronizar o secret $name após $max tentativas."
+            return 1
           }
           put_secret SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
           put_secret WOOVI_APP_ID "$WOOVI_APP_ID"
