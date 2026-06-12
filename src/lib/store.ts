@@ -10,6 +10,7 @@ import type {
   Produto,
   Servico,
 } from "./types";
+import { roundMoney } from "./types";
 import { produtosRepo } from "./produtos.repository";
 import { newId } from "./id";
 import { moverOrcamentoComBillingRemote } from "@/lib/api/billing.functions";
@@ -230,13 +231,18 @@ export function gerarNumeroOrcamento(existentes: Orcamento[]): string {
 }
 
 export function novoItem(parcial?: Partial<OrcamentoItem>): OrcamentoItem {
-  return {
+  const base = {
     id: newId(),
     nome: "",
     quantidade: 1,
     valor_unitario: 0,
-    unidade: "serviço",
+    unidade: "serviço" as const,
     ...parcial,
+  };
+  return {
+    ...base,
+    valor_total:
+      parcial?.valor_total ?? roundMoney(base.quantidade * base.valor_unitario),
   };
 }
 

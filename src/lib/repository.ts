@@ -17,8 +17,10 @@ import {
   calcDescontoValor,
   calcSubtotal,
   calcTotal,
+  itemLineTotal,
   normalizeGarantiaUnidade,
   parseRedesSociais,
+  roundMoney,
   serializeRedesSociais,
 } from "./types";
 
@@ -185,6 +187,10 @@ export function mapOrcamento(r: any): Orcamento {
       unidade: (i.unidade as UnidadeServico) ?? "serviço",
       quantidade: Number(i.quantidade) || 0,
       valor_unitario: Number(i.valor_unitario) || 0,
+      valor_total:
+        i.valor_total != null && i.valor_total !== ""
+          ? Number(i.valor_total) || 0
+          : roundMoney((Number(i.quantidade) || 0) * (Number(i.valor_unitario) || 0)),
     }));
   const historico: HistoricoStatus[] = (r.historico_status ?? [])
     .slice()
@@ -334,6 +340,7 @@ export const orcamentosRepo = {
         unidade: it.unidade,
         quantidade: it.quantidade,
         valor_unitario: it.valor_unitario,
+        valor_total: itemLineTotal(it),
         ordem: idx,
       }));
       const { error: eIns } = await supabase.from("orcamento_itens").insert(rows);

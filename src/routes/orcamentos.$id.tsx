@@ -19,6 +19,7 @@ import {
   calcTotal,
   formatBRL,
   formatPercentLabel,
+  roundMoney,
   dateInputFromTodayOrEmpty,
   dateInputToIso,
   garantiaUnidadeLabel,
@@ -170,7 +171,12 @@ function OrcamentoDetail() {
 
   const updateItem = (i: number, patch: Partial<OrcamentoItem>) => {
     const itens = [...o.itens];
-    itens[i] = { ...itens[i], ...patch };
+    const current = itens[i];
+    const next = { ...current, ...patch };
+    if ("quantidade" in patch || "valor_unitario" in patch) {
+      next.valor_total = roundMoney(next.quantidade * next.valor_unitario);
+    }
+    itens[i] = next;
     setO({ ...o, itens });
   };
 
@@ -527,11 +533,17 @@ function OrcamentoDetail() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-2 md:col-span-1 md:flex-col md:items-end md:justify-start">
-                  <div className="md:text-right">
+                  <div className="w-full md:text-right">
                     <Label className="text-xs">Total</Label>
-                    <div className="text-sm font-medium">
-                      {formatBRL(it.quantidade * it.valor_unitario)}
-                    </div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="md:text-right"
+                      value={it.valor_total}
+                      onChange={(e) =>
+                        updateItem(i, { valor_total: parseFloat(e.target.value) || 0 })
+                      }
+                    />
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Button

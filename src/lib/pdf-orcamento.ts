@@ -20,6 +20,7 @@ import {
   formatCalendarDate,
   formatDate,
   formatPercentLabel,
+  itemLineTotal,
 } from "./types";
 import { labelDocumento, labelDocumentoLower } from "./empresa-categorias";
 import { BRAND_COLOR_DARK } from "./brand-colors";
@@ -139,7 +140,7 @@ export function buildOrcamentoPdfDoc(
       { text: String(it.quantidade), style: "tableCell", alignment: "right" },
       { text: formatBRL(it.valor_unitario), style: "tableCell", alignment: "right" },
       {
-        text: formatBRL(it.quantidade * it.valor_unitario),
+        text: formatBRL(itemLineTotal(it)),
         style: "tableCell",
         alignment: "right",
       },

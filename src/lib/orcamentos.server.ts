@@ -2,6 +2,7 @@ import { getSupabaseServer } from "@/integrations/supabase/server";
 import { resolveEmpresaId } from "@/lib/billing/empresa.server";
 import { getCategoriaConfig, normalizeEmpresaCategoria } from "@/lib/empresa-categorias";
 import type { StatusOrcamento } from "@/lib/empresa-categorias/types";
+import { itemLineTotal, roundMoney } from "@/lib/types";
 
 async function garantirLancamentoReceber(
   sb: ReturnType<typeof getSupabaseServer>,
@@ -112,11 +113,13 @@ export async function moverOrcamentoServer(
   const itensPreview = (atual.orcamento_itens ?? []).map((i: Record<string, unknown>) => ({
     quantidade: Number(i.quantidade) || 0,
     valor_unitario: Number(i.valor_unitario) || 0,
+    valor_total:
+      i.valor_total != null && i.valor_total !== ""
+        ? Number(i.valor_total) || 0
+        : roundMoney((Number(i.quantidade) || 0) * (Number(i.valor_unitario) || 0)),
   }));
-  const subPreview = itensPreview.reduce(
-    (s: number, i: { quantidade: number; valor_unitario: number }) =>
-      s + i.quantidade * i.valor_unitario,
-    0,
+  const subPreview = roundMoney(
+    itensPreview.reduce((s: number, i) => s + itemLineTotal(i), 0),
   );
   const descontoPctPreview = Number(atual.desconto_percentual) || 0;
   const totalPreview =
@@ -162,12 +165,12 @@ export async function moverOrcamentoServer(
   const itens = (atual.orcamento_itens ?? []).map((i: Record<string, unknown>) => ({
     quantidade: Number(i.quantidade) || 0,
     valor_unitario: Number(i.valor_unitario) || 0,
+    valor_total:
+      i.valor_total != null && i.valor_total !== ""
+        ? Number(i.valor_total) || 0
+        : roundMoney((Number(i.quantidade) || 0) * (Number(i.valor_unitario) || 0)),
   }));
-  const sub = itens.reduce(
-    (s: number, i: { quantidade: number; valor_unitario: number }) =>
-      s + i.quantidade * i.valor_unitario,
-    0,
-  );
+  const sub = roundMoney(itens.reduce((s: number, i) => s + itemLineTotal(i), 0));
   const descontoPct = Number(atual.desconto_percentual) || 0;
   const total = sub - sub * (descontoPct / 100) + (Number(atual.acrescimo) || 0);
 

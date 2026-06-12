@@ -177,6 +177,8 @@ export interface OrcamentoItem {
   unidade: UnidadeServico;
   quantidade: number;
   valor_unitario: number;
+  /** Total da linha; pode divergir de qtd × valor un. quando há negociação. */
+  valor_total: number;
 }
 
 export interface HistoricoStatus {
@@ -249,8 +251,21 @@ export interface Financeiro {
   categoria_caixa?: import("./empresa-categorias/types").CategoriaCaixa;
 }
 
+export function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export function itemLineTotal(
+  item: Pick<OrcamentoItem, "quantidade" | "valor_unitario" | "valor_total">,
+): number {
+  if (item.valor_total != null && !Number.isNaN(item.valor_total)) {
+    return item.valor_total;
+  }
+  return roundMoney(item.quantidade * item.valor_unitario);
+}
+
 export function calcSubtotal(itens: OrcamentoItem[]): number {
-  return itens.reduce((acc, i) => acc + i.quantidade * i.valor_unitario, 0);
+  return roundMoney(itens.reduce((acc, i) => acc + itemLineTotal(i), 0));
 }
 
 export function calcDescontoValor(
